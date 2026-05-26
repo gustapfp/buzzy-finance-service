@@ -4,6 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "dev": "pnpm run compose:up && ts-node --watch index.ts",
+    "build": "pnpm build",
+    "start": "pnpm start",
     "lint": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
     "lint:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
     "prepare": "husky",
@@ -44,6 +47,7 @@
     "node-pg-migrate": "^8.0.4",
     "prettier": "3.8.3",
     "ts-node": "^10.9.2",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vercel": "^54.4.1"
   }
 }
