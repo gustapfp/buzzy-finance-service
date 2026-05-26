@@ -30,11 +30,13 @@
   "homepage": "https://github.com/gustapfp/buzzy-finance-service#readme",
   "packageManager": "pnpm@10.30.0",
   "dependencies": {
+    "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "pg": "^8.21.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
+    "@types/jest": "^30.0.0",
     "@types/node": "^25.9.1",
     "@types/pg": "^8.20.0",
     "husky": "^9.1.7",
