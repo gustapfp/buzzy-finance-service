@@ -1,0 +1,39 @@
+{
+  "name": "buzzy-finance-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "lint": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
+    "lint:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
+    "prepare": "husky",
+    "test": "jest",
+    "watch": "jest --watch",
+    "compose:up": "docker compose -f ./infra/docker/docker-compose.yml up -d",
+    "compose:stop": "docker compose -f ./infra/docker/docker-compose.yml stop",
+    "compose:down": "docker compose -f ./infra/docker/docker-compose.yml down",
+    "migrate": "node-pg-migrate -j ts",
+    "migrate:create": "node-pg-migrate -j ts -m infra/migrations create",
+    "migrate:up": "node-pg-migrate  -j ts -m infra/migrations --envPath .env.development up",
+    "migrate:down": " node-pg-migrate -j ts -m infra/migrations  --envPath .env.development down",
+    "migrate:redo": " node-pg-migrate  -j ts -m infra/migrations --envPath .env.development redo"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gustapfp/buzzy-finance-service.git"
+  },
+  "author": "gustapfp",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gustapfp/buzzy-finance-service/issues"
+  },
+  "homepage": "https://github.com/gustapfp/buzzy-finance-service#readme",
+  "packageManager": "pnpm@10.30.0",
+  "dependencies": {
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "prettier": "3.8.3"
+  }
+}
