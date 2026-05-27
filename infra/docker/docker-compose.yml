@@ -1,0 +1,15 @@
+name: buzzy-finance-local
+services:
+  postgresql:
+    container_name: buzzy_finance_db_local
+    image: postgres:16.0-alpine3.18
+    ports:
+      - "5432:5432"
+    volumes:
+      - buzzy_finance_postgresql_local:/var/lib/postgresql/data
+      - buzzy_finance_postgresql_local:/backups
+    env_file:
+      - ../../.env.development
+
+volumes:
+  buzzy_finance_postgresql_local: {}

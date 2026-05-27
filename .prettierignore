@@ -1,0 +1,7 @@
+!.storybookAdd commentMore actions
+!.jest
+build
+coverage
+node_modules
+.env
+.docs
