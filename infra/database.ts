@@ -2,6 +2,7 @@ import { Client, Pool } from "pg";
 import type { QueryResult, QueryResultRow } from "pg";
 import type { DatabaseStatusResponse } from "./types";
 import { DATABASE_CONFIG } from "./consts";
+import { logger } from "../utils/logger";
 
 export const createClient = (): Client => {
   const client = new Client(DATABASE_CONFIG);
@@ -47,7 +48,7 @@ export const databaseStatus = async (): Promise<DatabaseStatusResponse> => {
       db_message: "Database connection ok...",
     };
   } catch (err) {
-    console.error(err);
+    logger.error(err, "database health check failed");
     return {
       update_at: updateAt,
       postgres_version: "V16.0",
