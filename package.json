@@ -5,8 +5,8 @@
   "main": "api/index.ts",
   "scripts": {
     "dev": "pnpm run compose:up && tsx watch --env-file=.env.development api/index.ts",
-    "build": "pnpm build",
-    "start": "pnpm start",
+    "build": "tsc --outDir build",
+    "start": "node build/api/index.js",
     "lint": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
     "lint:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
     "prepare": "husky",
