@@ -8,7 +8,6 @@ const healthCheck = async (
   response: Response<HealthCheckResponse>,
 ): Promise<HealthCheckResponse | Record<string, any>> => {
   const postgreSQLCheck = await databaseStatus();
-  logger.info(postgreSQLCheck);
   return response.status(postgreSQLCheck.exit_code === 0 ? 200 : 500).json({
     api: {
       server_message: "I'm good and running!:)",

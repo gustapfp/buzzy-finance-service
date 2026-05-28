@@ -13,7 +13,6 @@ describe("API -> Health Check", () => {
     it("returns success messages for Database and Application", async () => {
       const response = await fetch(`${BASE_URL}/v1/status`);
       const data = (await response.json()) as HealthCheckResponse;
-      logger.info(data);
       expect(data.database.postgres_version).toBe("V16.0");
       expect(data.api.server_message).toBe("I'm good and running!:)");
       expect(data.database.db_message).toBe("Database connection ok...");
