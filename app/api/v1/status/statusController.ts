@@ -1,7 +1,7 @@
 import { databaseStatus } from "infra/database";
 import { HealthCheckResponse } from "./types";
 import { Request, Response } from "express";
-import { logger } from "utils/logger";
+import { logger } from "api/utils/logger";
 
 const healthCheck = async (
   request: Request,

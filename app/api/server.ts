@@ -1,6 +1,6 @@
 import express, { NextFunction, Request, Response } from "express";
 import { PORT } from "./config/consts";
-import { logger } from "../utils/logger";
+import { logger } from "./utils/logger";
 import V1Router from "./v1";
 
 const app = express();
@@ -21,7 +21,7 @@ app.use((_req: Request, res: Response) => {
   res.status(404).json({ message: "Not found" });
 });
 
-if (!process.env.VERCEL) {
+if (process.env.VERCEL !== "1") {
   app.listen(PORT, () => {
     logger.info(`Server running on port ${PORT}`);
   });
