@@ -1,6 +1,6 @@
 import { HealthCheckResponse } from "api/v1/status/types";
 import { DB_POOL } from "infra/database";
-import { logger } from "utils/logger";
+import { logger } from "api/utils/logger";
 
 const BASE_URL = `${process.env.BASE_URL}/api`;
 

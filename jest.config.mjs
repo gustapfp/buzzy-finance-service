@@ -4,17 +4,14 @@ export default {
     {
       displayName: "integration",
       testEnvironment: "node",
-      testMatch: ["<rootDir>/tests/v1/**/*.test.ts"],
-      moduleDirectories: ["node_modules", "<rootDir>"],
-      setupFiles: ["<rootDir>/tests/v1/api/setup.ts"],
+      testMatch: ["<rootDir>/app/tests/v1/**/*.test.ts"],
+      moduleDirectories: ["node_modules", "<rootDir>/app"],
+      setupFiles: ["<rootDir>/app/tests/v1/api/setup.ts"],
       transform: {
         "^.+\\.tsx?$": [
           "babel-jest",
           {
-            presets: [
-              ["@babel/preset-env", { targets: { node: "current" } }],
-              "@babel/preset-typescript",
-            ],
+            presets: [["@babel/preset-env", { targets: { node: "current" } }], "@babel/preset-typescript"],
           },
         ],
       },

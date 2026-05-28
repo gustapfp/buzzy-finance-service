@@ -2,3 +2,7 @@ node_modules
 
 # Finder (MacOS) folder config
 .DS_Store
+.vercel
+.env*
+build
+dist
