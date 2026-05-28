@@ -21,8 +21,10 @@ app.use((_req: Request, res: Response) => {
   res.status(404).json({ message: "Not found" });
 });
 
-app.listen(PORT, () => {
-  logger.info(`Server running on port ${PORT}`);
-});
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    logger.info(`Server running on port ${PORT}`);
+  });
+}
 
 export default app;
