@@ -3,7 +3,10 @@
   "builds": [
     {
       "src": "app/api/server.ts",
-      "use": "@vercel/node"
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": "app/infra/migrations/**"
+      }
     }
   ],
   "routes": [
