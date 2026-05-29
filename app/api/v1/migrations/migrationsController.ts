@@ -3,7 +3,7 @@ import { DB_POOL } from "infra/database";
 import { runner, RunnerOption } from "node-pg-migrate";
 import { RunMigrationResult } from "./types";
 
-export const runDryMigrations: () => Promise<RunMigrationResult> = async () => {
+export const runDryMigrationsController: () => Promise<RunMigrationResult> = async () => {
   try {
     return await runner({
       ...(MIGRATIONS_CONFIG as RunnerOption),
@@ -16,7 +16,7 @@ export const runDryMigrations: () => Promise<RunMigrationResult> = async () => {
   }
 };
 
-export const runLiveRunMigrations: () => Promise<RunMigrationResult> = async () => {
+export const runLiveRunMigrationsController: () => Promise<RunMigrationResult> = async () => {
   const client = await DB_POOL.connect();
 
   try {
