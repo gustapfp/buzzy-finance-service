@@ -1,12 +1,11 @@
 import { databaseStatus } from "infra/database";
-import { HealthCheckResponse } from "./types";
+import { HealthCheck, HealthCheckResponse } from "./types";
 import { Request, Response } from "express";
-import { logger } from "api/utils/logger";
 
 const healthCheckController = async (
-  request: Request,
-  response: Response<HealthCheckResponse>,
-): Promise<HealthCheckResponse | Record<string, any>> => {
+  _request: Request,
+  response: HealthCheckResponse,
+): Promise<HealthCheck | Record<string, any>> => {
   const postgreSQLCheck = await databaseStatus();
   return response.status(postgreSQLCheck.exit_code === 0 ? 200 : 500).json({
     api: {

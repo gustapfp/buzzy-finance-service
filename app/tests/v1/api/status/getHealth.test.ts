@@ -1,6 +1,5 @@
-import { HealthCheckResponse } from "api/v1/status/types";
+import { HealthCheck } from "api/v1/status/types";
 import { DB_POOL } from "infra/database";
-import { logger } from "api/utils/logger";
 
 const BASE_URL = `${process.env.BASE_URL}/api`;
 
@@ -12,7 +11,7 @@ describe("API -> Health Check", () => {
     });
     it("returns success messages for Database and Application", async () => {
       const response = await fetch(`${BASE_URL}/v1/status`);
-      const data = (await response.json()) as HealthCheckResponse;
+      const data = (await response.json()) as HealthCheck;
       expect(data.database.postgres_version).toBe("V16.0");
       expect(data.api.server_message).toBe("I'm good and running!:)");
       expect(data.database.db_message).toBe("Database connection ok...");

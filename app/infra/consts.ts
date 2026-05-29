@@ -11,7 +11,7 @@ export const DATABASE_CONFIG: DatabaseConfig = {
 
 export const MIGRATIONS_CONFIG: BaseMigrationsConfig = {
   databaseUrl: String(process.env.DATABASE_URL),
-  dir: "./infra/migrations",
+  dir: "./app/infra/migrations",
   direction: "up",
   verbose: false,
   dryRun: false,
