@@ -1,8 +1,8 @@
-import { MIGRATIONS_CONFIG } from "infra/consts";
-import { DB_POOL } from "infra/database";
+import { MIGRATIONS_CONFIG } from "../../../infra/consts";
+import { DB_POOL } from "../../../infra/database";
 import { runner, RunnerOption } from "node-pg-migrate";
 
-import { logger } from "api/utils/logger";
+import { logger } from "../../utils/logger";
 import { Request } from "express";
 import { DryMigrationsResponse, LiveMigrationsResponse } from "./types";
 
