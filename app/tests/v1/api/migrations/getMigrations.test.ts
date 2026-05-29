@@ -1,6 +1,5 @@
 import { DB_POOL } from "infra/database";
 import { cleanDatabase } from "./utils";
-import { DryMigrationsResponse } from "api/v1/migrations/types";
 
 const GET_MIGRATIONS_URL = `${process.env.BASE_URL}/api/v1/migrations`;
 
@@ -10,8 +9,11 @@ describe("GET Migrations", () => {
 
     beforeEach(async () => {
       client = await DB_POOL.connect();
-      await cleanDatabase(client);
-      client.release();
+      try {
+        await cleanDatabase(client);
+      } finally {
+        client.release();
+      }
     });
 
     it("Returns 200 and correct number of migrations", async () => {

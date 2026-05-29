@@ -31,7 +31,7 @@ export const runLiveRunMigrationsController = async (_request: Request, response
     });
     await client.query("COMMIT");
     if (appliedMigrations.length === 0) {
-      return response.status(200).json({
+      return response.status(201).json({
         message: "No migrations to apply",
         applied_migrations: [],
       });
