@@ -6,7 +6,7 @@ export const DATABASE_CONFIG: DatabaseConfig = {
   database: process.env.POSTGRES_DB as string,
   user: process.env.POSTGRES_USER as string,
   password: process.env.POSTGRES_PASSWORD as string,
-  ssl: process.env.NODE_ENV === "local" ? false : true,
+  ssl: process.env.NODE_ENV === "production" ? true : false,
 };
 
 export const MIGRATIONS_CONFIG: BaseMigrationsConfig = {

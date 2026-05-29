@@ -4,9 +4,9 @@ import { runner, RunnerOption } from "node-pg-migrate";
 
 import { logger } from "api/utils/logger";
 import { Request } from "express";
-import { MigrationsResponse } from "./types";
+import { DryMigrationsResponse, LiveMigrationsResponse } from "./types";
 
-export const runDryMigrationsController = async (_request: Request, response: MigrationsResponse) => {
+export const runDryMigrationsController = async (_request: Request, response: DryMigrationsResponse) => {
   try {
     const dryMigrations = await runner({
       ...(MIGRATIONS_CONFIG as RunnerOption),
@@ -21,7 +21,7 @@ export const runDryMigrationsController = async (_request: Request, response: Mi
   }
 };
 
-export const runLiveRunMigrationsController = async (_request: Request, response: MigrationsResponse) => {
+export const runLiveRunMigrationsController = async (_request: Request, response: LiveMigrationsResponse) => {
   const client = await DB_POOL.connect();
 
   try {
@@ -30,7 +30,16 @@ export const runLiveRunMigrationsController = async (_request: Request, response
       ...(MIGRATIONS_CONFIG as RunnerOption),
     });
     await client.query("COMMIT");
-    return response.status(200).json(appliedMigrations);
+    if (appliedMigrations.length === 0) {
+      return response.status(200).json({
+        message: "No migrations to apply",
+        applied_migrations: [],
+      });
+    }
+    return response.status(201).json({
+      message: "All migrations applied successfully",
+      applied_migrations: appliedMigrations,
+    });
   } catch (e) {
     logger.error(`Error running LIVE migrations: ${e}`);
     await client.query("ROLLBACK");
