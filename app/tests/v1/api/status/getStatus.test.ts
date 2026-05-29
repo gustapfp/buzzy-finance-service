@@ -3,8 +3,8 @@ import { DB_POOL } from "infra/database";
 
 const BASE_URL = `${process.env.BASE_URL}/api`;
 
-describe("API -> Health Check", () => {
-  describe("GET /v1/", () => {
+describe("GET Status", () => {
+  describe("GET api/v1/status", () => {
     it("returns 200 on API call", async () => {
       const response = await fetch(`${BASE_URL}/v1/status`);
       expect(response.status).toBe(200);
