@@ -3,7 +3,7 @@ import { HealthCheckResponse } from "./types";
 import { Request, Response } from "express";
 import { logger } from "api/utils/logger";
 
-const healthCheck = async (
+const healthCheckController = async (
   request: Request,
   response: Response<HealthCheckResponse>,
 ): Promise<HealthCheckResponse | Record<string, any>> => {
@@ -16,4 +16,4 @@ const healthCheck = async (
     status_message: postgreSQLCheck.exit_code === 0 ? "ok" : "error",
   });
 };
-export default healthCheck;
+export default healthCheckController;
