@@ -1,4 +1,4 @@
-import { databaseStatus } from "../../../infra/database";
+import { databaseStatus } from "infra/database";
 import { HealthCheck, HealthCheckResponse } from "./types";
 import { Request, Response } from "express";
 
