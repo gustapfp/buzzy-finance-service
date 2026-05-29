@@ -1,7 +1,7 @@
 import { Router } from "express";
-import healthCheck from "./statusController";
+import healthCheckController from "./statusController";
 
-const statusRouter = Router();
-statusRouter.route("/status").get(healthCheck);
+const statusRouter: Router = Router();
+statusRouter.route("/status").get(healthCheckController);
 
 export default statusRouter;

@@ -1,19 +1,17 @@
-import { HealthCheckResponse } from "api/v1/status/types";
+import { HealthCheck } from "api/v1/status/types";
 import { DB_POOL } from "infra/database";
-import { logger } from "api/utils/logger";
 
 const BASE_URL = `${process.env.BASE_URL}/api`;
 
-describe("API -> Health Check", () => {
-  describe("GET /v1/", () => {
+describe("GET Status", () => {
+  describe("GET api/v1/status", () => {
     it("returns 200 on API call", async () => {
       const response = await fetch(`${BASE_URL}/v1/status`);
       expect(response.status).toBe(200);
     });
     it("returns success messages for Database and Application", async () => {
       const response = await fetch(`${BASE_URL}/v1/status`);
-      const data = (await response.json()) as HealthCheckResponse;
-      logger.info(data);
+      const data = (await response.json()) as HealthCheck;
       expect(data.database.postgres_version).toBe("V16.0");
       expect(data.api.server_message).toBe("I'm good and running!:)");
       expect(data.database.db_message).toBe("Database connection ok...");

@@ -1,9 +1,10 @@
 import express, { NextFunction, Request, Response } from "express";
+import type { Express } from "express";
 import { PORT } from "./config/consts";
 import { logger } from "./utils/logger";
 import V1Router from "./v1";
 
-const app = express();
+const app: Express = express();
 
 app.use((req: Request, _res: Response, next: NextFunction) => {
   logger.info({ method: req.method, path: req.path }, "incoming request");
