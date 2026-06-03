@@ -1,4 +1,4 @@
-import type { DatabaseStatusResponse } from "../../../infra/types";
+import type { DatabaseStatusResponse } from "infra/types";
 import { Response } from "express";
 export type HealthCheckResponse = Response<HealthCheck>;
 interface ApiStatusResponse {

@@ -1,4 +1,4 @@
-import { DB_POOL } from "../../../../infra/database";
+import { DB_POOL } from "infra/database";
 import { cleanDatabase } from "./utils";
 
 const POST_MIGRATIONS_URL = `${process.env.BASE_URL}/api/v1/migrations`;

@@ -1,3 +1,4 @@
+import { resolve } from "path";
 import type { BaseMigrationsConfig, DatabaseConfig } from "./types";
 
 export const DATABASE_CONFIG: DatabaseConfig = {
@@ -11,7 +12,7 @@ export const DATABASE_CONFIG: DatabaseConfig = {
 
 export const MIGRATIONS_CONFIG: BaseMigrationsConfig = {
   databaseUrl: String(process.env.DATABASE_URL),
-  dir: "./app/infra/migrations",
+  dir: resolve(__dirname, "migrations"),
   direction: "up",
   verbose: false,
   dryRun: false,
