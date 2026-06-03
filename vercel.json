@@ -1,18 +1,19 @@
 {
   "version": 2,
+  "buildCommand": "pnpm run build",
   "builds": [
     {
-      "src": "app/api/server.ts",
+      "src": "dist/app/api/server.js",
       "use": "@vercel/node",
       "config": {
-        "includeFiles": ["app/infra/migrations/**"]
+        "includeFiles": ["dist/app/infra/migrations/**"]
       }
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/app/api/server.ts"
+      "dest": "/dist/app/api/server.js"
     }
   ]
 }
