@@ -1,6 +1,6 @@
 import { databaseStatus } from "infra/database";
 import { HealthCheck, HealthCheckResponse } from "./types";
-import { Request, Response } from "express";
+import { Request } from "express";
 
 const healthCheckController = async (
   _request: Request,
