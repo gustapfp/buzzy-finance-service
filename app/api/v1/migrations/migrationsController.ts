@@ -3,7 +3,7 @@ import { DB_POOL } from "infra/database";
 import { runner, RunnerOption } from "node-pg-migrate";
 
 import { logger } from "api/utils/logger";
-import { Request } from "express";
+import { Request, Response } from "express";
 import { DryMigrationsResponse, LiveMigrationsResponse } from "./types";
 
 export const runDryMigrationsController = async (_request: Request, response: DryMigrationsResponse) => {
@@ -50,4 +50,8 @@ export const runLiveRunMigrationsController = async (_request: Request, response
   } finally {
     client.release();
   }
+};
+
+export const catchNotAllowedMethods = async (_request: Request, response: Response) => {
+  return response.status(405).json({ message: "Method Not Allowed" });
 };
