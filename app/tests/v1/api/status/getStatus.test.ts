@@ -1,8 +1,11 @@
 import { HealthCheck } from "api/v1/status/types";
 import { DB_POOL } from "infra/database";
+import { waitForServices } from "infra/scripts/waitForServices";
 
 const BASE_URL = `${process.env.BASE_URL}/api`;
-
+beforeAll(async () => {
+  await waitForServices();
+});
 describe("GET Status", () => {
   describe("GET api/v1/status", () => {
     it("returns 200 on API call", async () => {
