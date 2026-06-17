@@ -1,14 +1,6 @@
 import { resolve } from "path";
 import type { BaseMigrationsConfig, DatabaseConfig } from "./types";
-
-const getSSLMode = (nodeEnv: string) => {
-  const conditions = {
-    production: { rejectUnauthorized: false },
-    staging: true,
-    local: false,
-  };
-  return conditions[nodeEnv as keyof typeof conditions] || false;
-};
+import { getSSLMode } from "./utils";
 
 export const DATABASE_CONFIG: DatabaseConfig = {
   host: process.env.POSTGRES_HOST ?? "localhost",
