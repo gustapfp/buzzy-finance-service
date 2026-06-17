@@ -9,8 +9,10 @@ export const waitForPostgres = (): void => {
   const handlePgIsReadyReturn = (err: ExecException | null, stdout: string, stderr: string) => {
     try {
       if (stdout.search("accepting connections") === -1) {
-        process.stdout.write(".");
-        waitForPostgres();
+        setTimeout(() => {
+          process.stdout.write(".");
+          waitForPostgres();
+        }, 500);
         return;
       }
       console.log("\n\n🟢 Postgres DB is ready!\n");
