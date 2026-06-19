@@ -7,6 +7,7 @@ export async function waitForServices() {
     console.log("💭 Connecting to Express Service...");
     return retry(fetchStatusEndpoint, {
       retries: 100,
+      maxTimeout: 5000,
     });
     async function fetchStatusEndpoint() {
       const response = await fetch(`${process.env.BASE_URL}/api/v1/status`);
