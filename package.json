@@ -10,7 +10,7 @@
     "lint": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
     "lint:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
     "prepare": "husky",
-    "test": "npm run compose:up && tsx --env-file=.env.development app/infra/scripts/waitForPostgres.ts &&  concurrently -n express,jest --hide express  -k --success command-jest \"tsx watch --env-file=.env.development app/api/server.ts\" \"jest --runInBand\"",
+    "test": "npm run compose:up &&  concurrently -n express,jest --hide express  -k --success command-jest \"tsx watch --env-file=.env.test app/api/server.ts\" \"jest --runInBand\"",
     "watch": " jest --watch --verbose --runInBand",
     "compose:up": "docker compose -f ./app/infra/docker/docker-compose.yml up -d",
     "compose:stop": "docker compose -f ./app/infra/docker/docker-compose.yml stop",
