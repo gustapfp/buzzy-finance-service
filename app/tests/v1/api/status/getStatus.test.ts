@@ -15,7 +15,7 @@ describe("GET Status", () => {
     it("returns success messages for Database and Application", async () => {
       const response = await fetch(`${BASE_URL}/v1/status`);
       const data = (await response.json()) as HealthCheck;
-      expect(data.database.postgres_version).toContain("V1000");
+      expect(data.database.postgres_version).toContain("V16");
       expect(data.api.server_message).toBe("I'm good and running!:)");
       expect(data.database.db_message).toBe("Database connection ok...");
       expect(data.database.active_connections).toEqual(1);
