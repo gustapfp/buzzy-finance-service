@@ -5,6 +5,7 @@ export async function waitForServices() {
   await waitForExpressService();
 
   async function waitForExpressService() {
+    let gugaTest;
     process.stdout.write("💭 Connecting to Express Service...");
     return retry(fetchStatusEndpoint, {
       retries: 100,
