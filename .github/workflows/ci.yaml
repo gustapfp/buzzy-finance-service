@@ -13,6 +13,8 @@ jobs:
           cache: "pnpm"
           cache-dependency-path: pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
+      - name: Create .env.test
+        run: echo "${{ secrets.ENV_TEST }}" > .env.test
       - run: pnpm build
       - run: pnpm test
       - run: pnpm lint:check
