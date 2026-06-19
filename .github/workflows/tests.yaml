@@ -1,21 +1,23 @@
 name: Automated Tests
-  on: [pull_request]
-  jobs:
-    build:
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/checkout@v6
+on: pull_request
+jobs:
+  build:
+    name: Build Ubuntu
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
         - uses: actions/setup-node@v6
         with:
           node-version: lts/iron
           cache: "pnpm"
         - run: pnpm install --frozen-lockfile
         - run: pnpm build
-    jest-test:
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/checkout@v6
-        - uses: actions/setup-node@v6
+  jest:
+    name: Jest Ubuntu
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: lts/iron
           cache: "pnpm"
