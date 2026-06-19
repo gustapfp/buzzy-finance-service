@@ -16,6 +16,11 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Create .env.test
         run: echo "${{ secrets.TEST_ENV }}" > .env.test
-      - run: pnpm build
-      - run: pnpm test
-      - run: pnpm lint:check
+      - name: Build
+        run: pnpm build
+      - name: Integration tests
+        run: pnpm test
+      - name: Prettier check
+        run: pnpm lint:prettier:check
+      - name: Eslint check
+        run: pnpm lint:eslint:check
