@@ -5,25 +5,21 @@ jobs:
     name: Build Ubuntu
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-        - uses: actions/setup-node@v6
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: lts/iron
           cache: "pnpm"
-        - run: pnpm install --frozen-lockfile
-        - run: pnpm build
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
   jest:
     name: Jest Ubuntu
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: lts/iron
           cache: "pnpm"
-        - run: pnpm install --frozen-lockfile
-        - run: pnpm test
-
-
-
-
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
