@@ -1,29 +1,17 @@
 name: Automated Tests
 on: pull_request
 jobs:
-  build:
-    name: Build Ubuntu
+  buzzy-finance-integration-tests:
+    name: Build, Test, and Lint with Ubuntu
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: lts/jod
+          node-version: lts/iron
           cache: "pnpm"
           cache-dependency-path: pnpm-lock.yaml
       - run: corepack enable pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-  jest:
-    name: Jest Ubuntu
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: lts/jod
-          cache: "pnpm"
-          cache-dependency-path: pnpm-lock.yaml
-      - run: corepack enable pnpm
-      - run: pnpm install --frozen-lockfile
       - run: pnpm test
