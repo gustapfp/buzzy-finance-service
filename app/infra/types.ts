@@ -4,7 +4,7 @@ export interface DatabaseConfig {
   database: string | undefined;
   user: string | undefined;
   password: string | undefined;
-  ssl: boolean | undefined;
+  ssl: boolean | { rejectUnauthorized: boolean } | undefined;
 }
 export interface DatabaseStatusResponse {
   update_at: string;

@@ -2,7 +2,7 @@ import type { DatabaseStatusResponse } from "infra/types";
 import { Response } from "express";
 export type HealthCheckResponse = Response<HealthCheck>;
 interface ApiStatusResponse {
-  server_message: String;
+  server_message: string;
 }
 export interface HealthCheck {
   api: ApiStatusResponse;

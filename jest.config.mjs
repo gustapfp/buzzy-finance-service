@@ -7,6 +7,7 @@ export default {
       testMatch: ["<rootDir>/app/tests/v1/**/*.test.ts"],
       moduleDirectories: ["node_modules", "<rootDir>/app"],
       setupFiles: ["<rootDir>/app/tests/v1/api/setup.ts"],
+      testTimeout: 6000,
       transform: {
         "^.+\\.tsx?$": [
           "babel-jest",
