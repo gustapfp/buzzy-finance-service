@@ -46,6 +46,8 @@
   "devDependencies": {
     "@babel/preset-env": "^7.29.7",
     "@babel/preset-typescript": "^7.29.7",
+    "@commitlint/cli": "^21.0.2",
+    "@commitlint/config-conventional": "^21.0.2",
     "@eslint/js": "^10.0.1",
     "@types/async-retry": "^1.4.9",
     "@types/express": "^5.0.6",
