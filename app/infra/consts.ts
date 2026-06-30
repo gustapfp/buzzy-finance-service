@@ -1,5 +1,6 @@
 import { resolve } from "path";
 import type { BaseMigrationsConfig, DatabaseConfig } from "./types";
+import { getSSLMode } from "./utils";
 
 export const DATABASE_CONFIG: DatabaseConfig = {
   host: process.env.POSTGRES_HOST ?? "localhost",
@@ -7,7 +8,7 @@ export const DATABASE_CONFIG: DatabaseConfig = {
   database: process.env.POSTGRES_DB as string,
   user: process.env.POSTGRES_USER as string,
   password: process.env.POSTGRES_PASSWORD as string,
-  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
+  ssl: getSSLMode(process.env.NODE_ENV as string),
 };
 
 export const MIGRATIONS_CONFIG: BaseMigrationsConfig = {

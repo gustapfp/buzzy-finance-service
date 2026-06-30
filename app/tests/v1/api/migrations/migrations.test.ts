@@ -1,8 +1,11 @@
 import { DB_POOL } from "infra/database";
 import { cleanDatabase } from "./utils";
+import { waitForServices } from "infra/scripts/waitForServices";
 
 const MIGRATIONS_URL = `${process.env.BASE_URL}/api/v1/migrations`;
-
+beforeAll(async () => {
+  await waitForServices();
+});
 describe("/migrations Endpoint", () => {
   describe("GET api/v1/migrations", () => {
     let client: any;
