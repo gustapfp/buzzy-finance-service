@@ -1,5 +1,5 @@
 import { MIGRATIONS_CONFIG } from "infra/consts";
-import { DB_POOL } from "infra/database";
+import { DB_POOL } from "infra/database/database";
 import { runner, RunnerOption } from "node-pg-migrate";
 
 import { logger } from "api/utils/logger";

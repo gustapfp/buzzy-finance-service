@@ -1,5 +1,5 @@
 import { HealthCheck } from "api/v1/status/types";
-import { DB_POOL } from "infra/database";
+import { DB_POOL } from "infra/database/database";
 import { waitForServices } from "infra/scripts/waitForServices";
 
 const BASE_URL = `${process.env.BASE_URL}/api`;

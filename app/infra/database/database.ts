@@ -1,8 +1,8 @@
 import { Client, Pool } from "pg";
 import type { QueryResult, QueryResultRow } from "pg";
-import type { DatabaseStatusResponse } from "./types";
-import { DATABASE_CONFIG } from "./consts";
-import { logger } from "../api/utils/logger";
+import type { DatabaseStatusResponse } from "../types";
+import { DATABASE_CONFIG } from "../consts";
+import { logger } from "../../api/utils/logger";
 
 export const createClient = (): Client => {
   const client = new Client(DATABASE_CONFIG);

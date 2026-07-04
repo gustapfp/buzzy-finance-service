@@ -1,4 +1,4 @@
-import { DB_POOL } from "infra/database";
+import { DB_POOL } from "infra/database/database";
 import { cleanDatabase } from "./utils";
 import { waitForServices } from "infra/scripts/waitForServices";
 
