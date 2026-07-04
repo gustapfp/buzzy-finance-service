@@ -7,12 +7,12 @@ const healthCheckController = async (
   response: HealthCheckResponse,
 ): Promise<HealthCheck | Record<string, any>> => {
   const postgreSQLCheck = await databaseStatus();
-  return response.status(postgreSQLCheck.exit_code === 0 ? 200 : 500).json({
+  return response.status(postgreSQLCheck.status_code).json({
     api: {
       server_message: "I'm good and running!:)",
     },
     database: postgreSQLCheck,
-    status_message: postgreSQLCheck.exit_code === 0 ? "ok" : "error",
+    status_message: postgreSQLCheck.status_code === 200 ? "ok" : "error",
   });
 };
 export default healthCheckController;

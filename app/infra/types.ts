@@ -11,8 +11,8 @@ export interface DatabaseStatusResponse {
   postgres_version: string;
   max_connections?: number;
   active_connections?: number;
-  exit_code: number;
   db_message: string;
+  status_code: number;
 }
 
 export interface BaseMigrationsConfig {

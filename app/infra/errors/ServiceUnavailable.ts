@@ -1,7 +1,7 @@
 import { BaseError } from "./BaseError";
-
+import type { ServiceName } from "./types";
 export class ServiceUnavailableError extends BaseError {
-  constructor(serviceName: string, cause: unknown) {
+  constructor(serviceName: ServiceName, cause: unknown) {
     super({
       cause,
       name: "service_unavailable_error",

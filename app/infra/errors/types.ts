@@ -1,4 +1,4 @@
-export interface ErrorResponse {
+export interface BaseErrorResponse {
   name: string;
   message: string;
   action: string;
@@ -15,3 +15,5 @@ export interface BaseErrorOptions extends ErrorOptions {
   action: string;
   status_code: number;
 }
+
+export type ServiceName = "Database" | "ExpressAPI" | "NextJsUI";

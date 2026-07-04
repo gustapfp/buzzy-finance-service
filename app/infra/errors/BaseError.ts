@@ -1,4 +1,4 @@
-import { BaseErrorOptions, ErrorResponse } from "./types";
+import { BaseErrorOptions, BaseErrorResponse } from "./types";
 
 export class BaseError extends Error {
   status_code: number;
@@ -11,7 +11,7 @@ export class BaseError extends Error {
     this.status_code = status_code;
   }
 
-  toJSON(): ErrorResponse {
+  toJSON(): BaseErrorResponse {
     return {
       name: this.name,
       message: this.message,
