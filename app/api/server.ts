@@ -16,7 +16,7 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
   next();
 });
 
-app.use(`/api`, V1Router);
+app.use(`/api/v1`, V1Router);
 
 app.use((_req: Request, res: Response) => {
   res.status(404).json({ message: "Not found" });
