@@ -1,24 +1,13 @@
-import { ErrorResponse } from "./types";
+import { BaseError } from "./BaseError";
 
-export class InternalServerError extends Error {
-  status_code: number;
-
-  action: string;
-
-  constructor({ cause }: { cause: unknown }) {
-    super();
-    this.name = "internal_server_error";
-    this.message = `internal server error: ${cause}`;
-    this.action = "Contact the support team.";
-    this.status_code = 500;
-  }
-
-  toJSON(): ErrorResponse {
-    return {
-      name: this.name,
-      message: this.message,
-      action: this.action,
-      status_code: this.status_code,
-    };
+export class InternalServerError extends BaseError {
+  constructor(cause: unknown) {
+    super({
+      cause,
+      name: "internal_server_error",
+      message: "An unexpected error occurred.",
+      action: "Contact the support team.",
+      status_code: 500,
+    });
   }
 }
