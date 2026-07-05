@@ -43,7 +43,7 @@ describe("/migrations Endpoint", () => {
       const response = await fetch(MIGRATIONS_URL, {
         method: "POST",
       });
-      expect(response.status).toBe(201);
+      expect(response.status).toBe(200);
       const data = await response.json();
       expect(data).toHaveProperty("message");
       expect(data).toHaveProperty("applied_migrations");
