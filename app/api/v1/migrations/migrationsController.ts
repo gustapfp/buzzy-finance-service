@@ -1,10 +1,10 @@
 import { MIGRATIONS_CONFIG } from "infra/consts";
-import { DB_POOL } from "infra/database/database";
 import { runner, RunnerOption } from "node-pg-migrate";
 
 import { logger } from "api/utils/logger";
 import { Request } from "express";
 import { DryMigrationsResponse, LiveMigrationsResponse } from "./types";
+import { handleUnexpectedError } from "../utils";
 
 export const runDryMigrationsController = async (_request: Request, response: DryMigrationsResponse) => {
   try {
@@ -17,21 +17,18 @@ export const runDryMigrationsController = async (_request: Request, response: Dr
     return response.status(200).json(dryMigrations);
   } catch (e) {
     logger.error(e, "Error running DRY migrations");
-    return response.status(500).json({ error: e as string, message: "Error running DRY migrations" });
+    return handleUnexpectedError(e, response);
   }
 };
 
 export const runLiveRunMigrationsController = async (_request: Request, response: LiveMigrationsResponse) => {
-  const client = await DB_POOL.connect();
-
   try {
-    await client.query("BEGIN");
     const appliedMigrations = await runner({
       ...(MIGRATIONS_CONFIG as RunnerOption),
+      singleTransaction: true,
     });
-    await client.query("COMMIT");
     if (appliedMigrations.length === 0) {
-      return response.status(201).json({
+      return response.status(200).json({
         message: "No migrations to apply",
         applied_migrations: [],
       });
@@ -42,12 +39,6 @@ export const runLiveRunMigrationsController = async (_request: Request, response
     });
   } catch (e) {
     logger.error(`Error running LIVE migrations: ${e}`);
-    await client.query("ROLLBACK");
-    return response.status(500).json({
-      error: e as string,
-      message: "Error running LIVE migrations",
-    });
-  } finally {
-    client.release();
+    return handleUnexpectedError(e, response);
   }
 };

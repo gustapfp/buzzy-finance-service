@@ -1,5 +1,6 @@
 import { HealthCheck } from "api/v1/status/types";
 import { DB_POOL } from "infra/database/database";
+import { BaseErrorResponse } from "infra/errors/types";
 import { waitForServices } from "infra/scripts/waitForServices";
 import { DatabaseStatusResponse } from "infra/types";
 import { describe } from "node:test";
@@ -56,6 +57,37 @@ describe("GET Status", () => {
           });
           expect(PATCHResponse.status).toBe(405);
         });
+      });
+    });
+
+    describe("Service Not Available", () => {
+      jest.mock("/infra/database/database", () => {
+        const actual = jest.requireActual("/infra/database/database");
+        return {
+          ...actual,
+          DB_POOL: {
+            connect: jest.fn().mockRejectedValue(new Error("connection refused")),
+            idleCount: 0,
+            totalCount: 0,
+          },
+        };
+      });
+      it("returns 503 on API call", async () => {
+        const response = await fetch(`${BASE_URL}/v1/status`);
+        expect(response.status).toBe(503);
+      });
+      it("returns error messages for Database", async () => {
+        const response = await fetch(`${BASE_URL}/v1/status`);
+        const data = (await response.json()) as HealthCheck;
+
+        const dbError = data.database as BaseErrorResponse;
+        expect(dbError.name).toBe("service_unavailable_error");
+        expect(dbError.message).toBe("The Database is not available for connection right now.");
+        expect(dbError.action).toBe("Notify the support team and try again later.");
+        expect(dbError.status_code).toBe(503);
+
+        expect(DB_POOL.idleCount === 0);
+        expect(DB_POOL.totalCount === 0);
       });
     });
   });
