@@ -4,6 +4,5 @@ import migrationsRouter from "./migrations/route";
 
 const V1: Router = Router();
 
-V1.use("/v1", statusRouter);
-V1.use("/v1", migrationsRouter);
+V1.use(statusRouter, migrationsRouter);
 export default V1;

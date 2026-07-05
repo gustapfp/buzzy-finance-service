@@ -1,8 +1,10 @@
 import { Client, Pool } from "pg";
 import type { QueryResult, QueryResultRow } from "pg";
-import type { DatabaseStatusResponse } from "./types";
-import { DATABASE_CONFIG } from "./consts";
-import { logger } from "../api/utils/logger";
+import type { DatabaseStatusResponse } from "../types";
+import { DATABASE_CONFIG } from "../consts";
+import { logger } from "../../api/utils/logger";
+import { ServiceUnavailableError } from "infra/errors/ServiceUnavailable";
+import { BaseErrorResponse } from "infra/errors/types";
 
 export const createClient = (): Client => {
   const client = new Client(DATABASE_CONFIG);
@@ -17,8 +19,8 @@ export const DB_POOL: Pool = new Pool({
   maxLifetimeSeconds: 60,
 });
 
-export const databaseStatus = async (): Promise<DatabaseStatusResponse> => {
-  const client = await DB_POOL.connect();
+export const databaseStatus = async (): Promise<DatabaseStatusResponse | BaseErrorResponse> => {
+  let client: any;
   const dbHealthStatement = `
   SELECT
     (
@@ -33,6 +35,7 @@ export const databaseStatus = async (): Promise<DatabaseStatusResponse> => {
   const updateAt = new Date().toISOString();
 
   try {
+    client = await DB_POOL.connect();
     const dbHealthResponse: QueryResult = await client.query({
       text: dbHealthStatement,
       values: [DATABASE_CONFIG.database],
@@ -44,18 +47,14 @@ export const databaseStatus = async (): Promise<DatabaseStatusResponse> => {
       postgres_version: `V${dbHealthRows.server_version}`,
       max_connections: dbHealthRows.max_connections,
       active_connections: dbHealthRows.active_connections,
-      exit_code: 0,
       db_message: "Database connection ok...",
+      status_code: 200,
     };
   } catch (err) {
     logger.error(err, "database health check failed");
-    return {
-      update_at: updateAt,
-      postgres_version: "V16.0",
-      exit_code: 1,
-      db_message: String(err),
-    };
+    const dbConnectionError = new ServiceUnavailableError("Database", err);
+    return dbConnectionError.toJSON();
   } finally {
-    await client.release(true);
+    await client?.release(true);
   }
 };
