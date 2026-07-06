@@ -5,6 +5,7 @@ import { logger } from "api/utils/logger";
 import { Request } from "express";
 import { DryMigrationsResponse, LiveMigrationsResponse } from "./types";
 import { handleUnexpectedError } from "../utils";
+import { DB_POOL } from "infra/database/database";
 
 export const runDryMigrationsController = async (_request: Request, response: DryMigrationsResponse) => {
   try {
@@ -22,10 +23,11 @@ export const runDryMigrationsController = async (_request: Request, response: Dr
 };
 
 export const runLiveRunMigrationsController = async (_request: Request, response: LiveMigrationsResponse) => {
+  let client;
   try {
+    client = await DB_POOL.connect();
     const appliedMigrations = await runner({
       ...(MIGRATIONS_CONFIG as RunnerOption),
-      singleTransaction: true,
     });
     if (appliedMigrations.length === 0) {
       return response.status(200).json({
@@ -40,5 +42,7 @@ export const runLiveRunMigrationsController = async (_request: Request, response
   } catch (e) {
     logger.error(`Error running LIVE migrations: ${e}`);
     return handleUnexpectedError(e, response);
+  } finally {
+    client?.release();
   }
 };

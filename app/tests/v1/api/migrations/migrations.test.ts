@@ -49,24 +49,22 @@ describe("/migrations Endpoint", () => {
       expect(data).toHaveProperty("applied_migrations");
     });
   });
-  describe("Expect 405 Not Allowed", () => {
-    it("Returns 405 when called with Delete", async () => {
-      const response = await fetch(MIGRATIONS_URL, {
+  describe("Error Responses", () => {
+    it("returns 405 when called with any other method", async () => {
+      const deleteResponse = await fetch(MIGRATIONS_URL, {
         method: "DELETE",
       });
-      expect(response.status).toBe(405);
-    });
-    it("Returns 405 when called with Put", async () => {
-      const response = await fetch(MIGRATIONS_URL, {
+      expect(deleteResponse.status).toBe(405);
+
+      const putResponse = await fetch(MIGRATIONS_URL, {
         method: "PUT",
       });
-      expect(response.status).toBe(405);
-    });
-    it("Returns 405 when called with Patch", async () => {
-      const response = await fetch(MIGRATIONS_URL, {
+      expect(putResponse.status).toBe(405);
+
+      const patchResponse = await fetch(MIGRATIONS_URL, {
         method: "PATCH",
       });
-      expect(response.status).toBe(405);
+      expect(patchResponse.status).toBe(405);
     });
   });
 });

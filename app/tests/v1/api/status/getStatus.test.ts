@@ -41,20 +41,20 @@ describe("GET Status", () => {
         });
 
         it("returns 405 when called with Delete", async () => {
-          const DeleteResponse = await fetch(`${BASE_URL}/v1/status`, {
+          const deleteResponse = await fetch(`${BASE_URL}/v1/status`, {
             method: "DELETE",
           });
-          expect(DeleteResponse.status).toBe(405);
+          expect(deleteResponse.status).toBe(405);
 
-          const PUTResponse = await fetch(`${BASE_URL}/v1/status`, {
+          const putResponse = await fetch(`${BASE_URL}/v1/status`, {
             method: "PUT",
           });
-          expect(PUTResponse.status).toBe(405);
+          expect(putResponse.status).toBe(405);
 
-          const PATCHResponse = await fetch(`${BASE_URL}/v1/status`, {
+          const patchResponse = await fetch(`${BASE_URL}/v1/status`, {
             method: "PATCH",
           });
-          expect(PATCHResponse.status).toBe(405);
+          expect(patchResponse.status).toBe(405);
         });
       });
     });
