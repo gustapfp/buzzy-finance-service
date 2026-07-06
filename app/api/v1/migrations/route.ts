@@ -1,5 +1,5 @@
 import { catchNotAllowedMethods } from "../utils";
-import { runDryMigrationsController, runLiveRunMigrationsController } from "./migrationsController";
+import { runDryMigrationsController, runLiveRunMigrationsController } from "./controller";
 import { Router } from "express";
 
 const migrationsRouter: Router = Router();
