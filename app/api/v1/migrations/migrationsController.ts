@@ -6,7 +6,7 @@ import { Request } from "express";
 import { DryMigrationsResponse, LiveMigrationsResponse } from "./types";
 import { handleUnexpectedError } from "../utils";
 import { DB_POOL } from "infra/database/database";
-
+// TODO: What happens if the DB service is down?
 export const runDryMigrationsController = async (_request: Request, response: DryMigrationsResponse) => {
   try {
     const dryMigrations = await runner({

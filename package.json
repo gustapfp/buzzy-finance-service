@@ -18,7 +18,7 @@
     "compose:down": "docker compose -f ./app/infra/docker/docker-compose.yml down",
     "migrate": "node-pg-migrate -j ts",
     "migrate:create": "node-pg-migrate -j ts -m ./app/infra/migrations create",
-    "migrate:up": "node-pg-migrate  -j ts -m ./app/infra/migrations --envPath .env.development up",
+    "migrate:up": "NODE_OPTIONS='--import tsx' node-pg-migrate  -j ts -m ./app/infra/migrations --envPath .env.development up",
     "migrate:down": " node-pg-migrate -j ts -m ./app/infra/migrations  --envPath .env.development down",
     "migrate:redo": " node-pg-migrate  -j ts -m ./app/infra/migrations --envPath .env.development redo"
   },
