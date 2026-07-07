@@ -1,9 +1,15 @@
-import type { Request } from "express";
+import type { Request, Response } from "express";
 export type Permission = "ADMIN" | "USER" | "GUEST";
-export interface UserCreateRequestBody {
+interface UserCreateRequestBody {
   username: string;
   email: string;
   password: string;
 }
 export type UserCreateRequest = Request<UserCreateRequestBody>;
-// export interface UserCreateResponse {}
+
+interface UserCreateResponseBody {
+  username: string;
+  created_at: string;
+  updated_at: string;
+}
+export type UserCreateResponse = Response<UserCreateResponseBody>;

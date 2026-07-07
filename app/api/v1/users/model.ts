@@ -14,11 +14,10 @@ const createUser = async (username: string, email: string, password: string) => 
   try {
     if (await newUserIsValid(email, username)) {
       const result = await query(CREATE_USER_STATEMENT, [username, email, password]);
-      logger.info(result);
       return result.rows[0];
     }
   } catch (err) {
-    console.log(err);
+    logger.error(err);
     throw err;
   }
 };

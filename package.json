@@ -5,6 +5,7 @@
   "main": "app/api/server.ts",
   "scripts": {
     "dev": "pnpm run compose:up && tsx --env-file=.env.development app/infra/scripts/waitForPostgres.ts && pnpm run migrate:up && tsx watch --env-file=.env.development app/api/server.ts",
+    "dev:test": "pnpm run compose:up && tsx --env-file=.env.test app/infra/scripts/waitForPostgres.ts && pnpm run migrate:up && tsx watch --env-file=.env.test app/api/server.ts",
     "build": "tsc && tsc-alias",
     "start": "node dist/app/api/server.js",
     "lint:prettier": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md}\"",

@@ -18,7 +18,6 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
     password: {
       // Reference: https://security.stackexchange.com/questions/39849/does-bcrypt-have-a-maximum-password-length/39851#39851
       type: "varchar(72)",
-      unique: true,
       notNull: true,
     },
     email: {
