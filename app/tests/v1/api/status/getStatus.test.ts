@@ -2,7 +2,7 @@ import { HealthCheck } from "api/v1/status/types";
 import { DB_POOL } from "infra/database/database";
 import { waitForServices } from "infra/scripts/waitForServices";
 import { DatabaseStatusResponse } from "infra/types";
-import { describe } from "node:test";
+
 const BASE_URL = `${process.env.BASE_URL}/api`;
 beforeAll(async () => {
   await waitForServices();
