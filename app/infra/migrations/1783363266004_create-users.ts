@@ -5,6 +5,7 @@ export const shorthands: ColumnDefinitions | undefined = undefined;
 export async function up(pgm: MigrationBuilder): Promise<void> {
   pgm.createTable("users", {
     id: {
+      default: pgm.func("gen_random_uuid()"),
       type: "uuid",
       primaryKey: true,
     },

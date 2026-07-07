@@ -52,8 +52,23 @@ export const databaseStatus = async (): Promise<DatabaseStatusResponse | BaseErr
     };
   } catch (err) {
     logger.error(err, "database health check failed");
-    const dbConnectionError = new ServiceUnavailableError("Database", err);
+    const dbConnectionError = new ServiceUnavailableError(err, "Database");
     return dbConnectionError.toJSON();
+  } finally {
+    await client?.release(true);
+  }
+};
+
+export const query = async (statement: string, values: any[]): Promise<QueryResult<any>> => {
+  let client: any;
+
+  try {
+    client = await DB_POOL.connect();
+    const queryResult = await client.query(statement, values);
+    return queryResult;
+  } catch (err) {
+    logger.error(err, "Unable to make query");
+    throw new ServiceUnavailableError(err, "Database");
   } finally {
     await client?.release(true);
   }
