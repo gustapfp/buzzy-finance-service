@@ -1,5 +1,5 @@
 import { DB_POOL } from "infra/database/database";
-import { cleanDatabase } from "./utils";
+import { cleanDatabase } from "../utils";
 import { waitForServices } from "infra/scripts/waitForServices";
 
 const MIGRATIONS_URL = `${process.env.BASE_URL}/api/v1/migrations`;
@@ -43,7 +43,7 @@ describe("/migrations Endpoint", () => {
       const response = await fetch(MIGRATIONS_URL, {
         method: "POST",
       });
-      expect(response.status).toBe(200);
+      expect(response.status).toBe(201);
       const data = await response.json();
       expect(data).toHaveProperty("message");
       expect(data).toHaveProperty("applied_migrations");
