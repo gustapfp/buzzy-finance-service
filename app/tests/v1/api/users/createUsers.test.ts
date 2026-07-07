@@ -63,4 +63,7 @@ describe("POST /v1/users", () => {
       expect(User1Response.status).toBe(422);
     });
   });
+  afterAll(async () => {
+    await DB_POOL.end();
+  });
 });
