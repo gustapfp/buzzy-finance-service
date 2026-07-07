@@ -16,6 +16,8 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
   next();
 });
 
+app.use(express.json());
+
 app.use(`/api/v1`, V1Router);
 
 app.use((_req: Request, res: Response) => {
