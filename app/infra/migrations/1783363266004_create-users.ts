@@ -17,7 +17,7 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
     },
     password: {
       // Reference: https://security.stackexchange.com/questions/39849/does-bcrypt-have-a-maximum-password-length/39851#39851
-      type: "varchar(72)",
+      type: "varchar(60)",
       notNull: true,
     },
     email: {
@@ -28,15 +28,15 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
     permission: {
       type: "varchar(12)",
     },
-    createdAt: {
+    created_at: {
       // Reference: https://justatheory.com/2012/04/postgres-use-timestamptz/
-      default: pgm.func("now()"),
+      default: pgm.func("timezone('utc', now())"),
       type: "timestamptz",
       notNull: true,
     },
-    updatedAt: {
+    updated_at: {
       // Reference: https://justatheory.com/2012/04/postgres-use-timestamptz/
-      default: pgm.func("now()"),
+      default: pgm.func("timezone('utc', now())"),
       type: "timestamptz",
       notNull: true,
     },
