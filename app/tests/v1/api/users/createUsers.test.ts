@@ -1,15 +1,6 @@
 import { DB_POOL } from "infra/database/database";
 import { waitForServices } from "infra/scripts/waitForServices";
-
-const ENDPOINT_URL = `${process.env.BASE_URL}/api/v1/users`;
-
-const createUser = async (body: any) => {
-  return await fetch(ENDPOINT_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-};
+import { createUser } from "./utils";
 
 describe("POST /v1/users", () => {
   let client: any;
