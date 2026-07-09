@@ -1,18 +1,29 @@
 import userModel from "./model";
-import { logger } from "api/utils/logger";
 import { handleUnexpectedError } from "../utils";
-import type { UserCreateRequest, UserCreateResponse } from "./types";
+import type {
+  GetUserByUsernameRequest,
+  GetUserByUsernameResponse,
+  UserCreateRequest,
+  UserCreateResponse,
+} from "./types";
 
 export const createUserController = async (request: UserCreateRequest, response: UserCreateResponse) => {
   try {
     const newUser = await userModel.createUser(request.body.username, request.body.email, request.body.password);
-    return response.status(201).json({
-      username: newUser.username,
-      created_at: newUser.createdAt,
-      updated_at: newUser.updatedAt,
-    });
+    return response.status(201).json(newUser);
   } catch (err) {
-    logger.error(err, "Error creating user");
+    return handleUnexpectedError(err, response);
+  }
+};
+
+export const getOneUserByUsernameController = async (
+  request: GetUserByUsernameRequest,
+  response: GetUserByUsernameResponse,
+) => {
+  try {
+    const user = await userModel.findOneByUsername(request.params.username);
+    return response.status(200).json(user);
+  } catch (err) {
     return handleUnexpectedError(err, response);
   }
 };

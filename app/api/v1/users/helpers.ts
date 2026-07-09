@@ -1,4 +1,4 @@
-import { query } from "infra/database/database";
+import { DB } from "infra/database/database";
 import { ValidationError } from "infra/errors/ValidationError";
 
 const thisEmailAlreadyExits = async (email: string): Promise<boolean> => {
@@ -8,7 +8,7 @@ const thisEmailAlreadyExits = async (email: string): Promise<boolean> => {
   WHERE
     LOWER(email) = LOWER($1);
   `;
-  const queryResponse = await query(statement, [email]);
+  const queryResponse = await DB.query(statement, [email]);
   if (queryResponse.rows.length > 0) {
     return true;
   }
@@ -22,7 +22,7 @@ const thisUsernameAlreadyExits = async (username: string) => {
   WHERE
     LOWER(username) = LOWER($1);
   `;
-  const queryResponse = await query(statement, [username]);
+  const queryResponse = await DB.query(statement, [username]);
   if (queryResponse.rows.length > 0) {
     return true;
   }
