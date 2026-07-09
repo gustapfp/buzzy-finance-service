@@ -59,7 +59,7 @@ export const databaseStatus = async (): Promise<DatabaseStatusResponse | BaseErr
   }
 };
 
-export const query = async (statement: string, values: any[]): Promise<QueryResult<any>> => {
+const query = async (statement: string, values: any[]): Promise<QueryResult<any>> => {
   let client: any;
 
   try {
@@ -72,4 +72,8 @@ export const query = async (statement: string, values: any[]): Promise<QueryResu
   } finally {
     await client?.release(true);
   }
+};
+
+export const DB = {
+  query,
 };
