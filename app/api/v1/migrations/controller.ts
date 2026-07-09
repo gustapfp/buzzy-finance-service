@@ -1,48 +1,23 @@
-import { MIGRATIONS_CONFIG } from "infra/consts";
-import { runner, RunnerOption } from "node-pg-migrate";
-
-import { logger } from "api/utils/logger";
+import migrationsModel from "./model";
+import { handleUnexpectedError } from "../utils";
 import { Request } from "express";
 import { DryMigrationsResponse, LiveMigrationsResponse } from "./types";
-import { handleUnexpectedError } from "../utils";
-import { DB_POOL } from "infra/database/database";
-// TODO: What happens if the DB service is down?
+
 export const runDryMigrationsController = async (_request: Request, response: DryMigrationsResponse) => {
   try {
-    const dryMigrations = await runner({
-      ...(MIGRATIONS_CONFIG as RunnerOption),
-      dryRun: true,
-      verbose: true,
-    });
-    logger.info(dryMigrations);
+    const dryMigrations = await migrationsModel.runDryMigrations();
     return response.status(200).json(dryMigrations);
   } catch (e) {
-    logger.error(e, "Error running DRY migrations");
     return handleUnexpectedError(e, response);
   }
 };
 
 export const runLiveRunMigrationsController = async (_request: Request, response: LiveMigrationsResponse) => {
-  let client;
   try {
-    client = await DB_POOL.connect();
-    const appliedMigrations = await runner({
-      ...(MIGRATIONS_CONFIG as RunnerOption),
-    });
-    if (appliedMigrations.length === 0) {
-      return response.status(200).json({
-        message: "No migrations to apply",
-        applied_migrations: [],
-      });
-    }
-    return response.status(201).json({
-      message: "All migrations applied successfully",
-      applied_migrations: appliedMigrations,
-    });
+    const result = await migrationsModel.runLiveMigrations();
+    const status = result.applied_migrations.length === 0 ? 200 : 201;
+    return response.status(status).json(result);
   } catch (e) {
-    logger.error(`Error running LIVE migrations: ${e}`);
     return handleUnexpectedError(e, response);
-  } finally {
-    client?.release();
   }
 };

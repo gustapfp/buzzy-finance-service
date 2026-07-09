@@ -1,6 +1,7 @@
 import { DB_POOL } from "infra/database/database";
 import { waitForServices } from "infra/scripts/waitForServices";
 import { createUser } from "./utils";
+import { applyMigrations, cleanDatabase } from "../utils";
 
 describe("POST /v1/users", () => {
   let client: any;
@@ -12,7 +13,8 @@ describe("POST /v1/users", () => {
     beforeEach(async () => {
       client = await DB_POOL.connect();
       try {
-        await client.query("TRUNCATE TABLE users CASCADE;");
+        await cleanDatabase(client);
+        await applyMigrations();
       } finally {
         client.release();
       }
