@@ -82,7 +82,70 @@ describe("POST /v1/users", () => {
       const user: User = result.rows[0];
 
       expect(user.password).not.toBe(user1.password);
+      expect(user.password).toMatch(/^\$2[aby]\$\d{2}\$.{53}$/);
       expect(await authManager.comparePassword(user1.password, user.password)).toBe(true);
+      expect(await authManager.comparePassword("hashed password", user.password)).toBe(false);
+    });
+    it("Rejects empty password", async () => {
+      const response = await createUser({ username: "user1", email: "user1@gmail.com", password: "" });
+      expect(response.status).not.toBe(201);
+    });
+    it("Stored hash is not the plain password with pepper", async () => {
+      const user1 = { username: "user1", email: "user1@gmail.com", password: "user1234" };
+      await createUser(user1);
+      const result = await DB.query(
+        `
+        SELECT *
+        FROM users
+        WHERE
+          LOWER(username) = LOWER($1)
+        LIMIT
+          1;
+        `,
+        [user1.username],
+      );
+      const storedHash = result.rows[0].password;
+      expect(storedHash).not.toBe(`${user1.password}.${process.env.APP_SECRET}`);
+      expect(storedHash).not.toContain(user1.password);
+    });
+    it("Not generate same hash with the same password", async () => {
+      const user1 = {
+        username: "user1",
+        email: "user1@gmail.com",
+        password: "user1234",
+      };
+      const user2 = {
+        username: "user2",
+        email: "user2@gmail.com",
+        password: "user1234",
+      };
+      await createUser(user1);
+      await createUser(user2);
+      const result1 = await DB.query(
+        `
+        SELECT *
+        FROM users
+        WHERE
+          LOWER(username) = LOWER($1)
+        LIMIT
+          1;
+        `,
+        [user1.username],
+      );
+      const result2 = await DB.query(
+        `
+        SELECT *
+        FROM users
+        WHERE
+          LOWER(username) = LOWER($1)
+        LIMIT
+          1;
+        `,
+        [user2.username],
+      );
+      const user1Hash = result1.rows[0].password;
+      const user2Hash = result2.rows[0].password;
+      expect(user1Hash).not.toBe(user2Hash);
     });
   });
   afterAll(async () => {
