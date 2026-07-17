@@ -1,7 +1,9 @@
-import { DB_POOL } from "infra/database/database";
+import { DB, DB_POOL } from "infra/database/database";
 import { waitForServices } from "infra/scripts/waitForServices";
 import { createUser } from "./utils";
 import { applyMigrations, cleanDatabase } from "../utils";
+import { User } from "api/v1/users/types";
+import { authManager } from "infra/auth/authManager";
 
 describe("POST /v1/users", () => {
   let client: any;
@@ -54,6 +56,33 @@ describe("POST /v1/users", () => {
       expect(user1Response.status).toBe(201);
       const User1Response = await createUser(User1);
       expect(User1Response.status).toBe(422);
+    });
+  });
+  describe("Validates Authentication", () => {
+    it("Password must be encrypted", async () => {
+      const user1 = {
+        username: "user1",
+        email: "user1@gmail.com",
+        password: "user1234",
+      };
+
+      await createUser(user1);
+
+      const result = await DB.query(
+        `
+        SELECT *
+        FROM users
+        WHERE
+          LOWER(username) = LOWER($1)
+        LIMIT
+          1;
+        `,
+        [user1.username],
+      );
+      const user: User = result.rows[0];
+
+      expect(user.password).not.toBe(user1.password);
+      expect(await authManager.comparePassword(user1.password, user.password)).toBe(true);
     });
   });
   afterAll(async () => {
