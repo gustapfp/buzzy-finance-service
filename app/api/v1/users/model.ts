@@ -3,6 +3,7 @@ import { newUserIsValid } from "./helpers";
 import { logger } from "api/utils/logger";
 import { NotFoundError } from "infra/errors/NotFoundError";
 import { GetUserByUsernameResponseBody, User } from "./types";
+import { authManager } from "infra/auth/authManager";
 
 const CREATE_USER_STATEMENT = `
 INSERT INTO
@@ -24,7 +25,8 @@ LIMIT
 const createUser = async (username: string, email: string, password: string) => {
   try {
     if (await newUserIsValid(email, username)) {
-      const result = await DB.query(CREATE_USER_STATEMENT, [username, email, password]);
+      const hashedPassword = await authManager.hashPassword(password);
+      const result = await DB.query(CREATE_USER_STATEMENT, [username, email, hashedPassword]);
       const newUser: User = result.rows[0];
       return {
         username: newUser.username,
