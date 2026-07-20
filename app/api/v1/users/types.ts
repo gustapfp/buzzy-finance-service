@@ -18,6 +18,7 @@ export type UserGetByUsernameRequest = Request<UserGetByUsernameQueryParam>;
 
 export interface UserGetByUsernameResponseBody {
   username: string;
+  password?: string; // Internal tooling only
   email: string;
   permission: Permission | null;
   created_at: string;
@@ -51,3 +52,11 @@ export interface UserUpdateRequestBody {
 }
 
 export type UserUpdateRequest = Request<UserUpdateRequestBody>;
+
+export interface UserUpdateResponseBody {
+  username: string;
+  email: string;
+  permission?: Permission;
+  updated_at: string;
+}
+export type UserUpdateResponse = Response<UserUpdateResponseBody>;

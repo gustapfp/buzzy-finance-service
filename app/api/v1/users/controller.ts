@@ -5,7 +5,21 @@ import type {
   UserGetByUsernameResponse,
   UserCreateRequest,
   UserCreateResponse,
+  UserUpdateRequest,
+  UserUpdateResponse,
 } from "./types";
+
+export const getOneUserByUsernameController = async (
+  request: UserGetByUsernameRequest,
+  response: UserGetByUsernameResponse,
+) => {
+  try {
+    const user = await userModel.findOneByUsername(request.params.username);
+    return response.status(200).json(user);
+  } catch (err) {
+    return handleUnexpectedError(err, response);
+  }
+};
 
 export const createUserController = async (request: UserCreateRequest, response: UserCreateResponse) => {
   try {
@@ -16,13 +30,10 @@ export const createUserController = async (request: UserCreateRequest, response:
   }
 };
 
-export const getOneUserByUsernameController = async (
-  request: UserGetByUsernameRequest,
-  response: UserGetByUsernameResponse,
-) => {
+export const updateUserController = async (request: UserUpdateRequest, response: UserUpdateResponse) => {
   try {
-    const user = await userModel.findOneByUsername(request.params.username);
-    return response.status(200).json(user);
+    const updatedUser = await userModel.updateUser(request.body);
+    return response.status(200).json(updatedUser);
   } catch (err) {
     return handleUnexpectedError(err, response);
   }

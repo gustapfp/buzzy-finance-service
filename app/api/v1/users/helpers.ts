@@ -1,5 +1,7 @@
 import { DB } from "infra/database/database";
 import { ValidationError } from "infra/errors/ValidationError";
+import { UserGetByUsernameResponseBody, UserUpdateRequestBody } from "./types";
+import { authManager } from "infra/auth/authManager";
 
 const thisEmailAlreadyExits = async (email: string): Promise<boolean> => {
   const statement = `
@@ -29,10 +31,10 @@ const thisUsernameAlreadyExits = async (username: string) => {
   return false;
 };
 
-export const newUserIsValid = async (email: string, username: string) => {
+export const newUserIsValid = async (email?: string, username?: string) => {
   const [emailExists, usernameExists] = await Promise.all([
-    thisEmailAlreadyExits(email),
-    thisUsernameAlreadyExits(username),
+    email ? thisEmailAlreadyExits(email) : Promise.resolve(false),
+    username ? thisUsernameAlreadyExits(username) : Promise.resolve(false),
   ]);
   if (emailExists || usernameExists) {
     throw new ValidationError(
@@ -42,4 +44,17 @@ export const newUserIsValid = async (email: string, username: string) => {
   }
 
   return true;
+};
+
+export const getProvidedValues = async (
+  currentUser: UserGetByUsernameResponseBody,
+  userUpdates: UserUpdateRequestBody,
+) => {
+  const newUsername = userUpdates.username ?? currentUser.username;
+  const newEmail = userUpdates.email ?? currentUser.email;
+  const newPassword = userUpdates.password
+    ? await authManager.hashPassword(userUpdates.password)
+    : currentUser!.password;
+  const permission = userUpdates.permission ?? currentUser.permission;
+  return { username: newUsername, email: newEmail, password: newPassword, permission: permission };
 };
