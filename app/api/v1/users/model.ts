@@ -28,8 +28,8 @@ SET
   username = $2,
   email = $3,
   password = $4,
-  updated_at = $5,
-  permission = $6
+  updated_at = timezone('utc', now()),
+  permission = $5
 WHERE
   username = $1
 RETURNING *;
@@ -64,7 +64,6 @@ const updateUser = async (userUpdates: UserUpdateRequestBody) => {
         newUserValues.username,
         newUserValues.email,
         newUserValues.password,
-        new Date().toISOString(),
         newUserValues.permission,
       ]);
       const updatedUser = result.rows[0];
