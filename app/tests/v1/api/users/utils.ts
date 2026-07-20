@@ -14,3 +14,11 @@ export const getUserByUsername = async (username: string) => {
     headers: { "Content-Type": "application/json" },
   });
 };
+
+export const updateUser = async (username: string, body: any) => {
+  return await fetch(`${ENDPOINT_URL}/${username}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+};
