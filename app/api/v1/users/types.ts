@@ -11,22 +11,22 @@ export interface User {
   updated_at: Date;
 }
 
-export interface GetUserByUsernameQueryParam {
+export interface UserGetByUsernameQueryParam {
   username: string;
 }
-export type GetUserByUsernameRequest = Request<GetUserByUsernameQueryParam>;
+export type UserGetByUsernameRequest = Request<UserGetByUsernameQueryParam>;
 
-export interface GetUserByUsernameResponseBody {
+export interface UserGetByUsernameResponseBody {
   username: string;
   email: string;
   permission: Permission | null;
   created_at: string;
   updated_at: string;
 }
-export type GetUserByUsernameResponse = Response<GetUserByUsernameResponseBody>;
+export type UserGetByUsernameResponse = Response<UserGetByUsernameResponseBody>;
 
 // --- POST ---
-interface UserCreateRequestBody {
+export interface UserCreateRequestBody {
   username: string;
   email: string;
   password: string;
@@ -39,3 +39,15 @@ interface UserCreateResponseBody {
   updated_at: string;
 }
 export type UserCreateResponse = Response<UserCreateResponseBody>;
+
+// --- PATCH ---
+
+export interface UserUpdateRequestBody {
+  current_username: string;
+  username?: string;
+  email?: string;
+  password?: string;
+  permission?: Permission;
+}
+
+export type UserUpdateRequest = Request<UserUpdateRequestBody>;
