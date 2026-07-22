@@ -1,4 +1,5 @@
 import { Client } from "pg";
+import { randomUUID } from "crypto";
 
 const MIGRATIONS_URL = `${process.env.BASE_URL}/api/v1/migrations`;
 
@@ -12,4 +13,15 @@ export const applyMigrations = async (): Promise<void> => {
   if (!response.ok) {
     throw new Error(`Failed to apply migrations: ${response.status}`);
   }
+};
+
+const randomId = (): string => randomUUID().replace(/-/g, "").slice(0, 12);
+
+export const createRandomUser = async (): Promise<any> => {
+  const id = randomId();
+  return {
+    email: `user-${id}@test.com`,
+    username: `user-${id}`,
+    password: `Pass!${id}`,
+  };
 };

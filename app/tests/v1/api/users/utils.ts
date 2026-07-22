@@ -1,6 +1,11 @@
+import { createRandomUser } from "../utils";
+
 const ENDPOINT_URL = `${process.env.BASE_URL}/api/v1/users`;
 
-export const createUser = async (body: any) => {
+export const createUser = async (body: any, withFaker = false) => {
+  if (withFaker) {
+    body = await createRandomUser();
+  }
   return await fetch(ENDPOINT_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
