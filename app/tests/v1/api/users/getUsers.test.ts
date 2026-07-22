@@ -1,7 +1,6 @@
 import { DB_POOL } from "infra/database/database";
 import { waitForServices } from "infra/scripts/waitForServices";
-import { createUser, getUserByUsername } from "./utils";
-import { applyMigrations, cleanDatabase } from "../utils";
+import { createUser, getUserByUsername, applyMigrations, cleanDatabase } from "../utils";
 
 describe("GET /v1/users/:username", () => {
   let client: any;

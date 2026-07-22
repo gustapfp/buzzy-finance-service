@@ -1,7 +1,6 @@
 import { DB, DB_POOL } from "infra/database/database";
 import { waitForServices } from "infra/scripts/waitForServices";
-import { createUser, updateUser } from "./utils";
-import { applyMigrations, cleanDatabase } from "../utils";
+import { createUser, updateUser, applyMigrations, cleanDatabase } from "../utils";
 import { User } from "api/v1/users/types";
 import { authManager } from "infra/auth/authManager";
 
