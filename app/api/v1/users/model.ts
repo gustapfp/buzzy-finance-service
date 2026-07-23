@@ -2,38 +2,14 @@ import { DB } from "infra/database/database";
 import { getProvidedValues, newUserIsValid } from "./helpers";
 import { logger } from "api/utils/logger";
 import { NotFoundError } from "infra/errors/NotFoundError";
-import { UserGetByUsernameResponseBody, User, UserCreateRequestBody, UserUpdateRequestBody } from "./types";
+import { User, UserCreateRequestBody, UserGetByUsernameResponseBody, UserUpdateRequestBody } from "./types";
 import { authManager } from "infra/auth/authManager";
-
-const CREATE_USER_STATEMENT = `
-INSERT INTO
-  users (username, email, password)
-VALUES
-  ($1, $2, $3)
-RETURNING *;
-`;
-
-const GET_USER_BY_USERNAME_STATEMENT = `
-SELECT *
-FROM users
-WHERE
-  LOWER(username) = LOWER($1)
-LIMIT
-  1;
-`;
-
-const UPDATE_USER_STATEMENT = `
-UPDATE users
-SET
-  username = $2,
-  email = $3,
-  password = $4,
-  updated_at = timezone('utc', now()),
-  permission = $5
-WHERE
-  username = $1
-RETURNING *;
-`;
+import {
+  CREATE_USER_STATEMENT,
+  UPDATE_USER_STATEMENT,
+  GET_USER_BY_USERNAME_STATEMENT,
+  GET_USER_BY_EMAIL_STATEMENT,
+} from "./consts";
 
 const createUser = async (user: UserCreateRequestBody) => {
   try {
@@ -100,7 +76,20 @@ const findOneByUsername = async (username: string, showPassword?: boolean): Prom
     throw err;
   }
 };
+const findOneByEmail = async (email: string): Promise<User> => {
+  try {
+    const result = await DB.query(GET_USER_BY_EMAIL_STATEMENT, [email]);
+    if (result.rows.length === 0) {
+      throw new NotFoundError(null, "User not found", "Check the username and try again.");
+    }
+    const user: User = result.rows[0];
+    return user;
+  } catch (err) {
+    logger.error(err, "Error getting user by username");
+    throw err;
+  }
+};
 
-export const userModel = { createUser, updateUser, findOneByUsername };
+export const userModel = { createUser, updateUser, findOneByUsername, findOneByEmail };
 
 export default userModel;
