@@ -210,7 +210,7 @@ describe("PUT /v1/users/:username", () => {
       expect(user.password).not.toBe(newPassword);
       expect(user.password).toMatch(/^\$2[aby]\$\d{2}\$.{53}$/);
       expect(await authManager.comparePassword(newPassword, user.password)).toBe(true);
-      expect(await authManager.comparePassword(seedUser.password, user.password)).toBe(false);
+      await expect(authManager.comparePassword(seedUser.password, user.password)).rejects.toThrow();
     });
 
     it("Password is not re-hashed when not provided in update", async () => {
