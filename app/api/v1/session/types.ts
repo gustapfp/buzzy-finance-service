@@ -1,3 +1,5 @@
+import type { Request, Response } from "express";
+
 export interface Session {
   id: string;
   token: string;
@@ -12,5 +14,23 @@ export interface Session {
 export interface BaseSession {
   user_id: string;
   user_agent: string;
-  timezone: string;
 }
+
+export interface Login {
+  email: string;
+  password: string;
+  userAgent: string;
+}
+
+// ------ SCHEMAS ------
+
+export interface LoginRequestBody {
+  email: string;
+  password: string;
+}
+export type LoginRequest = Request<Record<string, never>, any, LoginRequestBody>;
+
+export interface LoginResponseBody {
+  session_token: string;
+}
+export type LoginResponse = Response<LoginResponseBody>;
