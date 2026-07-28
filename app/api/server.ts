@@ -3,6 +3,7 @@ import type { Express } from "express";
 import { PORT } from "./config/consts";
 import { logger } from "./utils/logger";
 import V1Router from "./v1";
+import cookieParser from "cookie-parser";
 
 const app: Express = express();
 
@@ -10,6 +11,7 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
   logger.info({ method: req.method, path: req.path }, "incoming request");
   next();
 });
+app.use(cookieParser());
 
 app.use((req: Request, _res: Response, next: NextFunction) => {
   logger.info(`${req.method} ${req.url}`);
