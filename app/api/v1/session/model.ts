@@ -5,33 +5,21 @@ import { logger } from "api/utils/logger";
 import { Request } from "express";
 import { UnauthorizedError } from "infra/errors/UnauthorizedError";
 import { stringifySetCookie } from "cookie";
-export const CREATE_SESSION_STATEMENT = `
-INSERT INTO
-  session (token, user_agent, user_id, expires_at)
-VALUES
-  ($1, $2, $3, $4)
-RETURNING *;
-`;
+import {
+  CREATE_SESSION_STATEMENT,
+  DELETE_SESSION_STATEMENT,
+  EVICT_OLDEST_SESSIONS_STATEMENT,
+  FIND_USER_SESSION_BY_TOKEN,
+  MAX_SESSIONS_PER_USER,
+} from "./consts";
 
-export const FIND_USER_SESSION_BY_TOKEN = `
-SELECT
-  *
-FROM
-  session
-WHERE
-  token = $1
-LIMIT 1;
-`;
-
-export const DELETE_SESSION_STATEMENT = `
-DELETE FROM
-  session
-WHERE
-  token = $1
-RETURNING *;
-`;
+const evictOldestSessions = async (userId: string) => {
+  await DB.query(EVICT_OLDEST_SESSIONS_STATEMENT, [userId, MAX_SESSIONS_PER_USER]);
+};
 
 const createSession = async (session: BaseSession) => {
+  await evictOldestSessions(session.user_id);
+
   const sessionToken = authManager.createSessionToken();
   const thirtyDaysFromNow = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 

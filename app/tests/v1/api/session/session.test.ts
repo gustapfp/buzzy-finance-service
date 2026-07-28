@@ -146,6 +146,42 @@ describe("Session API", () => {
         dbClient.release();
       }
     });
+
+    it("evicts the oldest session when user exceeds the max session limit (5)", async () => {
+      const tokens: string[] = [];
+
+      // Create 6 sessions (limit is 3)
+      for (let i = 0; i < 4; i++) {
+        const res = await loginRequest(
+          { email: TEST_USER.email, password: TEST_USER.password },
+          { "User-Agent": `agent-${i}` },
+        );
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        tokens.push(body.session_token);
+      }
+
+      const dbClient = await DB_POOL.connect();
+      try {
+        // Total active sessions should be capped at 3
+        const result = await dbClient.query(
+          "SELECT count(*)::int AS cnt FROM session WHERE user_id = (SELECT user_id FROM session LIMIT 1)",
+        );
+        expect(result.rows[0].cnt).toBe(3);
+
+        // The first (oldest) session should have been evicted
+        const oldest = await dbClient.query("SELECT * FROM session WHERE token = $1", [tokens[0]]);
+        expect(oldest.rows.length).toBe(0);
+
+        // The most recent 3 sessions should still exist
+        for (let i = 1; i <= 3; i++) {
+          const check = await dbClient.query("SELECT * FROM session WHERE token = $1", [tokens[i]]);
+          expect(check.rows.length).toBe(1);
+        }
+      } finally {
+        dbClient.release();
+      }
+    });
   });
 
   // ──────────────────────────────────────────────────────────────────
