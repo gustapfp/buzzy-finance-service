@@ -32,7 +32,7 @@ export const createUserController = async (request: UserCreateRequest, response:
 
 export const updateUserController = async (request: UserUpdateRequest, response: UserUpdateResponse) => {
   try {
-    const updatedUser = await userModel.updateUser(request.body);
+    const updatedUser = await userModel.updateUser(request.body, request.params.username);
     return response.status(200).json(updatedUser);
   } catch (err) {
     return handleUnexpectedError(err, response);

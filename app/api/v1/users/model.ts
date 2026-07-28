@@ -29,14 +29,14 @@ const createUser = async (user: UserCreateRequestBody) => {
   }
 };
 
-const updateUser = async (userUpdates: UserUpdateRequestBody) => {
+const updateUser = async (userUpdates: UserUpdateRequestBody, current_username: string) => {
   try {
     if (await newUserIsValid(userUpdates.email, userUpdates.username)) {
-      const currentUser = await findOneByUsername(userUpdates.current_username, true);
+      const currentUser = await findOneByUsername(current_username, true);
 
       const newUserValues = await getProvidedValues(currentUser, userUpdates);
       const result = await DB.query(UPDATE_USER_STATEMENT, [
-        userUpdates.current_username,
+        current_username,
         newUserValues.username,
         newUserValues.email,
         newUserValues.password,
@@ -76,11 +76,12 @@ const findOneByUsername = async (username: string, showPassword?: boolean): Prom
     throw err;
   }
 };
+
 const findOneByEmail = async (email: string): Promise<User> => {
   try {
     const result = await DB.query(GET_USER_BY_EMAIL_STATEMENT, [email]);
     if (result.rows.length === 0) {
-      throw new NotFoundError(null, "User not found", "Check the username and try again.");
+      throw new NotFoundError(null, "User not found", "Check the email and try again.");
     }
     const user: User = result.rows[0];
     return user;

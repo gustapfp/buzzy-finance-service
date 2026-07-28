@@ -43,15 +43,18 @@ export type UserCreateResponse = Response<UserCreateResponseBody>;
 
 // --- PATCH ---
 
+export interface UserUpdateParams {
+  username: string;
+}
+
 export interface UserUpdateRequestBody {
-  current_username: string;
   username?: string;
   email?: string;
   password?: string;
   permission?: Permission;
 }
 
-export type UserUpdateRequest = Request<UserUpdateRequestBody>;
+export type UserUpdateRequest = Request<UserUpdateParams, unknown, UserUpdateRequestBody>;
 
 export interface UserUpdateResponseBody {
   username: string;
