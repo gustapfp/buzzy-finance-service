@@ -9,7 +9,7 @@ import {
   CREATE_SESSION_STATEMENT,
   DELETE_SESSION_STATEMENT,
   EVICT_OLDEST_SESSIONS_STATEMENT,
-  FIND_USER_SESSION_BY_TOKEN,
+  FIND_ONE_VALID_SESSION_BY_TOKEN_STATEMENT,
   MAX_SESSIONS_PER_USER,
 } from "./consts";
 
@@ -17,7 +17,7 @@ const evictOldestSessions = async (userId: string) => {
   await DB.query(EVICT_OLDEST_SESSIONS_STATEMENT, [userId, MAX_SESSIONS_PER_USER]);
 };
 
-const createSession = async (session: BaseSession) => {
+const createSession = async (session: BaseSession): Promise<Session> => {
   await evictOldestSessions(session.user_id);
 
   const sessionToken = authManager.createSessionToken();
@@ -33,15 +33,9 @@ const createSession = async (session: BaseSession) => {
   return newSession;
 };
 
-const thisSessionIsValid = (session: Session, userAgent: string): boolean => {
-  const isSessionActive = session.expires_at > new Date(Date.now());
-  const isAgentValid = session.user_agent === userAgent;
-  return isSessionActive && isAgentValid;
-};
-
-const findUserSessionByToken = async (token: string) => {
+const findOneValidSessionByToken = async (token: string, userAgent: string): Promise<Session> => {
   try {
-    const result = await DB.query(FIND_USER_SESSION_BY_TOKEN, [token]);
+    const result = await DB.query(FIND_ONE_VALID_SESSION_BY_TOKEN_STATEMENT, [token, userAgent]);
     if (result.rows.length === 0) {
       throw new UnauthorizedError(null);
     }
@@ -54,14 +48,11 @@ const findUserSessionByToken = async (token: string) => {
   }
 };
 
-const validateUserSession = async (req: Request) => {
+const validateUserSession = async (req: Request): Promise<Session> => {
   try {
     const token = authManager.getTokenFromCookie(req);
     const userAgent = authManager.getUserAgent(req);
-    const userSession = await findUserSessionByToken(token);
-    if (!thisSessionIsValid(userSession, userAgent)) {
-      throw new UnauthorizedError(null);
-    }
+    const userSession = await findOneValidSessionByToken(token, userAgent);
     return userSession;
   } catch (err) {
     logger.error(err, "Error validating user session");
@@ -69,7 +60,7 @@ const validateUserSession = async (req: Request) => {
   }
 };
 
-const login = async (loginObj: Login) => {
+const login = async (loginObj: Login): Promise<string> => {
   try {
     const user = await authManager.authenticate(loginObj.email, loginObj.password);
     const session: Session = await createSession({

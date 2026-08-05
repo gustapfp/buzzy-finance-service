@@ -6,13 +6,15 @@ VALUES
 RETURNING *;
 `;
 
-export const FIND_USER_SESSION_BY_TOKEN = `
+export const FIND_ONE_VALID_SESSION_BY_TOKEN_STATEMENT = `
 SELECT
   *
 FROM
   session
 WHERE
   token = $1
+  AND expires_at > NOW()
+  AND user_agent = $2
 LIMIT 1;
 `;
 

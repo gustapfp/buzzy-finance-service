@@ -43,6 +43,7 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
       notNull: true,
     },
   });
+  pgm.createIndex("session", "token");
 }
 
 export const down = false;

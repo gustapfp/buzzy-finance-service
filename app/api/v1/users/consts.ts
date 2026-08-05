@@ -15,6 +15,15 @@ LIMIT
   1;
 `;
 
+export const GET_USER_BY_ID_STATEMENT = `
+SELECT *
+FROM users
+WHERE
+  id = $1
+LIMIT
+  1;
+`;
+
 export const GET_USER_BY_EMAIL_STATEMENT = `
 SELECT *
 FROM users

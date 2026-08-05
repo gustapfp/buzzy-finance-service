@@ -9,6 +9,7 @@ import {
   UPDATE_USER_STATEMENT,
   GET_USER_BY_USERNAME_STATEMENT,
   GET_USER_BY_EMAIL_STATEMENT,
+  GET_USER_BY_ID_STATEMENT,
 } from "./consts";
 
 const createUser = async (user: UserCreateRequestBody) => {
@@ -91,6 +92,20 @@ const findOneByEmail = async (email: string): Promise<User> => {
   }
 };
 
-export const userModel = { createUser, updateUser, findOneByUsername, findOneByEmail };
+const findOneById = async (id: string): Promise<User> => {
+  try {
+    const result = await DB.query(GET_USER_BY_ID_STATEMENT, [id]);
+    if (result.rows.length === 0) {
+      throw new NotFoundError(null, "User not found", "Check the id and try again.");
+    }
+    const user: User = result.rows[0];
+    return user;
+  } catch (err) {
+    logger.error(err, "Error getting user by id");
+    throw err;
+  }
+};
+
+export const userModel = { createUser, updateUser, findOneByUsername, findOneByEmail, findOneById };
 
 export default userModel;
