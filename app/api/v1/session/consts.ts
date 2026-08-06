@@ -43,3 +43,14 @@ WHERE
     LIMIT $2 - 1
   );
 `;
+
+export const UPDATE_SESSION_EXPIRES_AT_STATEMENT = `
+    UPDATE 
+      session
+    SET 
+      expires_at = $1,
+      updated_at = NOW()
+    WHERE 
+      id = $2
+    RETURNING *;
+  `;

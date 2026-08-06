@@ -14,7 +14,7 @@ export const getOneUserByUsernameController = async (
   response: UserGetByUsernameResponse,
 ) => {
   try {
-    const user = await userModel.findOneByUsername(request.params.username);
+    const user = await userModel.validateUserAndSession(request, request.params.username);
     return response.status(200).json(user);
   } catch (err) {
     return handleUnexpectedError(err, response);
@@ -32,7 +32,8 @@ export const createUserController = async (request: UserCreateRequest, response:
 
 export const updateUserController = async (request: UserUpdateRequest, response: UserUpdateResponse) => {
   try {
-    const updatedUser = await userModel.updateUser(request.body, request.params.username);
+    const user = await userModel.validateUserAndSession(request, request.params.username);
+    const updatedUser = await userModel.updateUser(request.body, user.username);
     return response.status(200).json(updatedUser);
   } catch (err) {
     return handleUnexpectedError(err, response);

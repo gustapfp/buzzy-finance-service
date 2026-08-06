@@ -1,6 +1,13 @@
 import { DB_POOL } from "infra/database/database";
 import { waitForServices } from "infra/scripts/waitForServices";
-import { createUser, getUserByUsername, applyMigrations, cleanDatabase } from "../utils";
+import {
+  createUser,
+  getUserByUsername,
+  applyMigrations,
+  cleanDatabase,
+  loginUser,
+  extractSessionCookie,
+} from "../utils";
 
 describe("GET /v1/users/:username", () => {
   let client: any;
@@ -28,8 +35,10 @@ describe("GET /v1/users/:username", () => {
       };
 
       await createUser(user1);
+      const loginResponse = await loginUser({ email: user1.email, password: user1.password });
+      const cookie = extractSessionCookie(loginResponse);
 
-      const userGetResponse = await getUserByUsername(user1.username);
+      const userGetResponse = await getUserByUsername(user1.username, cookie);
       const userGetResponseBody = await userGetResponse.json();
 
       expect(userGetResponse.status).toBe(200);
@@ -43,15 +52,15 @@ describe("GET /v1/users/:username", () => {
       expect(userGetResponseBody).not.toHaveProperty("password");
       expect(userGetResponseBody).not.toHaveProperty("id");
     });
-    it("Throws an error when the username doesn't exist", async () => {
+    it("Throws an error when not authenticated", async () => {
       const userGetResponse = await getUserByUsername("test_username!");
       const userGetResponseBody = await userGetResponse.json();
-      expect(userGetResponse.status).toBe(404);
+      expect(userGetResponse.status).toBe(401);
       expect(userGetResponseBody).toEqual({
-        name: "not_found_error",
-        message: "User not found",
-        status_code: 404,
-        action: "Check the username and try again.",
+        name: "unauthorized",
+        message: "User Unauthorized to do this operation.",
+        status_code: 401,
+        action: "Please try to login again or if you're facing any issue contact the support team.",
       });
     });
     it("Gets a user by username (case insensitive) and return a 200 response", async () => {
@@ -62,8 +71,10 @@ describe("GET /v1/users/:username", () => {
       };
 
       await createUser(user1);
+      const loginResponse = await loginUser({ email: user1.email, password: user1.password });
+      const cookie = extractSessionCookie(loginResponse);
 
-      const userGetResponse = await getUserByUsername("UsEr1");
+      const userGetResponse = await getUserByUsername("UsEr1", cookie);
       const userGetResponseBody = await userGetResponse.json();
 
       expect(userGetResponse.status).toBe(200);

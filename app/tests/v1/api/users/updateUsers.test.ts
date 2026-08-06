@@ -1,11 +1,12 @@
 import { DB, DB_POOL } from "infra/database/database";
 import { waitForServices } from "infra/scripts/waitForServices";
-import { createUser, updateUser, applyMigrations, cleanDatabase } from "../utils";
+import { createUser, updateUser, applyMigrations, cleanDatabase, loginUser, extractSessionCookie } from "../utils";
 import { User } from "api/v1/users/types";
 import { authManager } from "infra/auth/authManager";
 
 describe("PUT /v1/users/:username", () => {
   let client: any;
+  let cookie: string;
 
   const seedUser = {
     username: "user1",
@@ -27,13 +28,19 @@ describe("PUT /v1/users/:username", () => {
         client.release();
       }
       await createUser(seedUser);
+      const loginResponse = await loginUser({ email: seedUser.email, password: seedUser.password });
+      cookie = extractSessionCookie(loginResponse);
     });
 
     it("Updates the username and returns a 200 response", async () => {
-      const response = await updateUser(seedUser.username, {
-        current_username: seedUser.username,
-        username: "newUsername",
-      });
+      const response = await updateUser(
+        seedUser.username,
+        {
+          current_username: seedUser.username,
+          username: "newUsername",
+        },
+        cookie,
+      );
       const body = await response.json();
       expect(response.status).toBe(200);
       expect(body).toEqual({
@@ -45,10 +52,14 @@ describe("PUT /v1/users/:username", () => {
     });
 
     it("Updates the email and returns a 200 response", async () => {
-      const response = await updateUser(seedUser.username, {
-        current_username: seedUser.username,
-        email: "newemail@gmail.com",
-      });
+      const response = await updateUser(
+        seedUser.username,
+        {
+          current_username: seedUser.username,
+          email: "newemail@gmail.com",
+        },
+        cookie,
+      );
       const body = await response.json();
       expect(response.status).toBe(200);
       expect(body).toEqual({
@@ -60,10 +71,14 @@ describe("PUT /v1/users/:username", () => {
     });
 
     it("Updates the password and returns a 200 response", async () => {
-      const response = await updateUser(seedUser.username, {
-        current_username: seedUser.username,
-        password: "newPassword123",
-      });
+      const response = await updateUser(
+        seedUser.username,
+        {
+          current_username: seedUser.username,
+          password: "newPassword123",
+        },
+        cookie,
+      );
       const body = await response.json();
       expect(response.status).toBe(200);
       expect(body).toEqual({
@@ -76,10 +91,14 @@ describe("PUT /v1/users/:username", () => {
     });
 
     it("Updates the permission and returns a 200 response", async () => {
-      const response = await updateUser(seedUser.username, {
-        current_username: seedUser.username,
-        permission: "ADMIN",
-      });
+      const response = await updateUser(
+        seedUser.username,
+        {
+          current_username: seedUser.username,
+          permission: "ADMIN",
+        },
+        cookie,
+      );
       const body = await response.json();
       expect(response.status).toBe(200);
       expect(body).toEqual({
@@ -91,12 +110,16 @@ describe("PUT /v1/users/:username", () => {
     });
 
     it("Updates multiple fields at once", async () => {
-      const response = await updateUser(seedUser.username, {
-        current_username: seedUser.username,
-        username: "updatedUser",
-        email: "updated@gmail.com",
-        permission: "USER",
-      });
+      const response = await updateUser(
+        seedUser.username,
+        {
+          current_username: seedUser.username,
+          username: "updatedUser",
+          email: "updated@gmail.com",
+          permission: "USER",
+        },
+        cookie,
+      );
       const body = await response.json();
       expect(response.status).toBe(200);
       expect(body).toEqual({
@@ -108,10 +131,14 @@ describe("PUT /v1/users/:username", () => {
     });
 
     it("Does not return sensitive fields in the response", async () => {
-      const response = await updateUser(seedUser.username, {
-        current_username: seedUser.username,
-        username: "safeUser",
-      });
+      const response = await updateUser(
+        seedUser.username,
+        {
+          current_username: seedUser.username,
+          username: "safeUser",
+        },
+        cookie,
+      );
       const body = await response.json();
       expect(response.status).toBe(200);
       expect(body).not.toHaveProperty("password");
@@ -127,10 +154,14 @@ describe("PUT /v1/users/:username", () => {
       // Small delay to ensure timestamp differs
       await new Promise((resolve) => setTimeout(resolve, 50));
 
-      await updateUser(seedUser.username, {
-        current_username: seedUser.username,
-        username: "timestampUser",
-      });
+      await updateUser(
+        seedUser.username,
+        {
+          current_username: seedUser.username,
+          username: "timestampUser",
+        },
+        cookie,
+      );
 
       const afterUpdate = await DB.query(`SELECT updated_at FROM users WHERE LOWER(username) = LOWER($1) LIMIT 1;`, [
         "timestampUser",
@@ -156,29 +187,43 @@ describe("PUT /v1/users/:username", () => {
         email: "user2@gmail.com",
         password: "user2234",
       });
+      const loginResponse = await loginUser({ email: seedUser.email, password: seedUser.password });
+      cookie = extractSessionCookie(loginResponse);
     });
 
     it("Throws an error when updating to an existing username", async () => {
-      const response = await updateUser(seedUser.username, {
-        current_username: seedUser.username,
-        username: "user2",
-      });
+      const response = await updateUser(
+        seedUser.username,
+        {
+          current_username: seedUser.username,
+          username: "user2",
+        },
+        cookie,
+      );
       expect(response.status).toBe(422);
     });
 
     it("Throws an error when updating to an existing email", async () => {
-      const response = await updateUser(seedUser.username, {
-        current_username: seedUser.username,
-        email: "user2@gmail.com",
-      });
+      const response = await updateUser(
+        seedUser.username,
+        {
+          current_username: seedUser.username,
+          email: "user2@gmail.com",
+        },
+        cookie,
+      );
       expect(response.status).toBe(422);
     });
 
     it("Username uniqueness check is case-insensitive", async () => {
-      const response = await updateUser(seedUser.username, {
-        current_username: seedUser.username,
-        username: "User2",
-      });
+      const response = await updateUser(
+        seedUser.username,
+        {
+          current_username: seedUser.username,
+          username: "User2",
+        },
+        cookie,
+      );
       expect(response.status).toBe(422);
     });
   });
@@ -193,14 +238,20 @@ describe("PUT /v1/users/:username", () => {
         client.release();
       }
       await createUser(seedUser);
+      const loginResponse = await loginUser({ email: seedUser.email, password: seedUser.password });
+      cookie = extractSessionCookie(loginResponse);
     });
 
     it("New password must be encrypted", async () => {
       const newPassword = "newSecurePassword";
-      await updateUser(seedUser.username, {
-        current_username: seedUser.username,
-        password: newPassword,
-      });
+      await updateUser(
+        seedUser.username,
+        {
+          current_username: seedUser.username,
+          password: newPassword,
+        },
+        cookie,
+      );
 
       const result = await DB.query(`SELECT * FROM users WHERE LOWER(username) = LOWER($1) LIMIT 1;`, [
         seedUser.username,
@@ -219,10 +270,14 @@ describe("PUT /v1/users/:username", () => {
       ]);
       const originalHash = beforeUpdate.rows[0].password;
 
-      await updateUser(seedUser.username, {
-        current_username: seedUser.username,
-        username: "renamedUser",
-      });
+      await updateUser(
+        seedUser.username,
+        {
+          current_username: seedUser.username,
+          username: "renamedUser",
+        },
+        cookie,
+      );
 
       const afterUpdate = await DB.query(`SELECT password FROM users WHERE LOWER(username) = LOWER($1) LIMIT 1;`, [
         "renamedUser",

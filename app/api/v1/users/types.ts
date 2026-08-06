@@ -11,9 +11,10 @@ export interface User {
   updated_at: Date;
 }
 // ------ SCHEMAS ------
-export interface UserGetByUsernameQueryParam {
+export type UserGetByUsernameQueryParam = {
   username: string;
-}
+};
+
 export type UserGetByUsernameRequest = Request<UserGetByUsernameQueryParam>;
 
 export interface UserGetByUsernameResponseBody {
@@ -43,16 +44,16 @@ export type UserCreateResponse = Response<UserCreateResponseBody>;
 
 // --- PATCH ---
 
-export interface UserUpdateParams {
+export type UserUpdateParams = {
   username: string;
-}
+};
 
-export interface UserUpdateRequestBody {
+export type UserUpdateRequestBody = {
   username?: string;
   email?: string;
   password?: string;
   permission?: Permission;
-}
+};
 
 export type UserUpdateRequest = Request<UserUpdateParams, unknown, UserUpdateRequestBody>;
 

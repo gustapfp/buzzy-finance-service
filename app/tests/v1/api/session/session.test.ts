@@ -1,6 +1,7 @@
 import { DB_POOL } from "infra/database/database";
 import { waitForServices } from "infra/scripts/waitForServices";
 import { applyMigrations, cleanDatabase, createUser } from "../utils";
+import type { LoginResponseBody } from "api/v1/session/types";
 
 const LOGIN_URL = `${process.env.BASE_URL}/api/v1/session/login`;
 const LOGOUT_URL = `${process.env.BASE_URL}/api/v1/session/logout`;
@@ -28,7 +29,11 @@ const logoutRequest = (cookie: string, userAgent: string = "jest-test-agent") =>
 
 const extractSessionCookie = (response: Response): string => {
   const setCookie = response.headers.get("set-cookie") || "";
-  return setCookie.split(";")[0]; // "sdi=<token>"
+  return setCookie.split(";")[0] ?? ""; // "sdi=<token>"
+};
+
+const parseLoginBody = async (response: Response): Promise<LoginResponseBody> => {
+  return (await response.json()) as LoginResponseBody;
 };
 
 describe("Session API", () => {
@@ -58,7 +63,7 @@ describe("Session API", () => {
         { email: TEST_USER.email, password: TEST_USER.password },
         { "User-Agent": "jest-test-agent" },
       );
-      const body = await response.json();
+      const body = await parseLoginBody(response);
 
       expect(response.status).toBe(200);
       expect(body).toHaveProperty("session_token");
@@ -90,8 +95,8 @@ describe("Session API", () => {
         { email: TEST_USER.email, password: TEST_USER.password },
         { "User-Agent": "jest-test-agent" },
       );
-      const body1 = await res1.json();
-      const body2 = await res2.json();
+      const body1 = await parseLoginBody(res1);
+      const body2 = await parseLoginBody(res2);
 
       expect(body1.session_token).not.toBe(body2.session_token);
     });
@@ -101,7 +106,7 @@ describe("Session API", () => {
         { email: TEST_USER.email, password: TEST_USER.password },
         { "User-Agent": "jest-test-agent" },
       );
-      const body = await response.json();
+      const body = await parseLoginBody(response);
       const cookie = extractSessionCookie(response);
 
       expect(cookie).toBe(`sdi=${body.session_token}`);
@@ -113,7 +118,7 @@ describe("Session API", () => {
         { email: TEST_USER.email, password: TEST_USER.password },
         { "User-Agent": customAgent },
       );
-      const body = await response.json();
+      const body = await parseLoginBody(response);
 
       // Query the session directly from the DB
       const dbClient = await DB_POOL.connect();
@@ -131,7 +136,7 @@ describe("Session API", () => {
         { email: TEST_USER.email, password: TEST_USER.password },
         { "User-Agent": "jest-test-agent" },
       );
-      const body = await response.json();
+      const body = await parseLoginBody(response);
 
       const dbClient = await DB_POOL.connect();
       try {
@@ -157,7 +162,7 @@ describe("Session API", () => {
           { "User-Agent": `agent-${i}` },
         );
         expect(res.status).toBe(200);
-        const body = await res.json();
+        const body = await parseLoginBody(res);
         tokens.push(body.session_token);
       }
 
@@ -411,7 +416,7 @@ describe("Session API", () => {
         { email: TEST_USER.email, password: TEST_USER.password },
         { "User-Agent": "jest-test-agent" },
       );
-      const body = await loginRes.json();
+      const body = await parseLoginBody(loginRes);
       const cookie = extractSessionCookie(loginRes);
 
       // Confirm session exists
@@ -446,7 +451,7 @@ describe("Session API", () => {
         { email: TEST_USER.email, password: TEST_USER.password },
         { "User-Agent": "agent-2" },
       );
-      const body2 = await loginRes2.json();
+      const body2 = await parseLoginBody(loginRes2);
       const cookie1 = extractSessionCookie(loginRes1);
 
       // Logout session 1 (must use same agent it was created with)

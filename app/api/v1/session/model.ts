@@ -11,6 +11,7 @@ import {
   EVICT_OLDEST_SESSIONS_STATEMENT,
   FIND_ONE_VALID_SESSION_BY_TOKEN_STATEMENT,
   MAX_SESSIONS_PER_USER,
+  UPDATE_SESSION_EXPIRES_AT_STATEMENT,
 } from "./consts";
 
 const evictOldestSessions = async (userId: string) => {
@@ -33,6 +34,14 @@ const createSession = async (session: BaseSession): Promise<Session> => {
   return newSession;
 };
 
+const refreshSession = async (session: Session): Promise<Session> => {
+  const newExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+  const result = await DB.query(UPDATE_SESSION_EXPIRES_AT_STATEMENT, [newExpiresAt, session.id]);
+  const updatedSession: Session = result.rows[0];
+  return updatedSession;
+};
+
 const findOneValidSessionByToken = async (token: string, userAgent: string): Promise<Session> => {
   try {
     const result = await DB.query(FIND_ONE_VALID_SESSION_BY_TOKEN_STATEMENT, [token, userAgent]);
@@ -40,7 +49,7 @@ const findOneValidSessionByToken = async (token: string, userAgent: string): Pro
       throw new UnauthorizedError(null);
     }
     const session: Session = result.rows[0];
-
+    await refreshSession(session);
     return session;
   } catch (err) {
     logger.error(err, "Error getting session by token");

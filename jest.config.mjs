@@ -9,14 +9,14 @@ export default {
       setupFiles: ["<rootDir>/app/tests/v1/api/setup.ts"],
       testTimeout: 6000,
       transform: {
-        "^.+\\.tsx?$": [
+        "^.+\\.(t|j)sx?$": [
           "babel-jest",
           {
             presets: [["@babel/preset-env", { targets: { node: "current" } }], "@babel/preset-typescript"],
           },
         ],
       },
-      transformIgnorePatterns: ["/node_modules/"],
+      transformIgnorePatterns: [String.raw`/node_modules/(?!\.pnpm/cookie@|cookie/)`],
     },
   ],
 };

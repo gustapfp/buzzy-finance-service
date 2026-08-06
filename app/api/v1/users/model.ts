@@ -11,6 +11,9 @@ import {
   GET_USER_BY_EMAIL_STATEMENT,
   GET_USER_BY_ID_STATEMENT,
 } from "./consts";
+import { UnauthorizedError } from "infra/errors/UnauthorizedError";
+import sessionModel from "../session/model";
+import type { Request } from "express";
 
 const createUser = async (user: UserCreateRequestBody) => {
   try {
@@ -106,6 +109,31 @@ const findOneById = async (id: string): Promise<User> => {
   }
 };
 
-export const userModel = { createUser, updateUser, findOneByUsername, findOneByEmail, findOneById };
+export const validateUserAndSession = async (
+  request: Request,
+  username: string,
+): Promise<UserGetByUsernameResponseBody> => {
+  const session = await sessionModel.validateUserSession(request);
+  const user: User = await userModel.findOneById(session.user_id);
+  if (user.username.toLowerCase() !== username.toLowerCase()) {
+    throw new UnauthorizedError(null);
+  }
+  return {
+    username: user.username,
+    email: user.email,
+    permission: user.permission,
+    created_at: user.created_at.toISOString(),
+    updated_at: user.updated_at.toISOString(),
+  };
+};
+
+export const userModel = {
+  createUser,
+  updateUser,
+  findOneByUsername,
+  findOneByEmail,
+  findOneById,
+  validateUserAndSession,
+};
 
 export default userModel;
