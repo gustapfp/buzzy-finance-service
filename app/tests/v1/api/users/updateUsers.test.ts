@@ -4,7 +4,7 @@ import { createUser, updateUser, applyMigrations, cleanDatabase, loginUser, extr
 import { User } from "api/v1/users/types";
 import { authManager } from "infra/auth/authManager";
 
-describe("PUT /v1/users/:username", () => {
+describe("PUT /v1/user/:username", () => {
   let client: any;
   let cookie: string;
 

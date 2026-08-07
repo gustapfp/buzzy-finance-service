@@ -3,7 +3,7 @@ import { randomUUID } from "crypto";
 import type { LoginResponseBody } from "api/v1/session/types";
 
 const MIGRATIONS_URL = `${process.env.BASE_URL}/api/v1/migrations`;
-const USERS_ENDPOINT_URL = `${process.env.BASE_URL}/api/v1/users`;
+const USERS_ENDPOINT_URL = `${process.env.BASE_URL}/api/v1/user`;
 const SESSION_ENDPOINT_URL = `${process.env.BASE_URL}/api/v1/session`;
 
 export const cleanDatabase = async (client: Client): Promise<void> => {

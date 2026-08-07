@@ -9,7 +9,7 @@ import {
   extractSessionCookie,
 } from "../utils";
 
-describe("GET /v1/users/:username", () => {
+describe("GET /v1/user/:username", () => {
   let client: any;
 
   beforeAll(async () => {

@@ -4,9 +4,9 @@ import { catchNotAllowedMethods } from "../utils";
 
 const usersRouter: Router = Router();
 
-usersRouter.route("/users").post(createUserController).all(catchNotAllowedMethods);
+usersRouter.route("/user").post(createUserController).all(catchNotAllowedMethods);
 usersRouter
-  .route("/users/:username")
+  .route("/user/:username")
   .get(getOneUserByUsernameController)
   .put(updateUserController)
   .all(catchNotAllowedMethods);
