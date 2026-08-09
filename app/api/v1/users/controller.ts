@@ -7,14 +7,18 @@ import type {
   UserCreateResponse,
   UserUpdateRequest,
   UserUpdateResponse,
+  UserGetCurrentResponse,
 } from "./types";
+import type { Request } from "express";
+import sessionModel from "../session/model";
 
 export const getOneUserByUsernameController = async (
   request: UserGetByUsernameRequest,
   response: UserGetByUsernameResponse,
 ) => {
   try {
-    const user = await userModel.validateUserAndSession(request, request.params.username);
+    await sessionModel.validateUserSession(request);
+    const user = await userModel.findOneByUsername(request.params.username);
     return response.status(200).json(user);
   } catch (err) {
     return handleUnexpectedError(err, response);
@@ -32,9 +36,30 @@ export const createUserController = async (request: UserCreateRequest, response:
 
 export const updateUserController = async (request: UserUpdateRequest, response: UserUpdateResponse) => {
   try {
-    const user = await userModel.validateUserAndSession(request, request.params.username);
-    const updatedUser = await userModel.updateUser(request.body, user.username);
+    const updatedUser = await userModel.updateUser(request.body, request.params.username);
     return response.status(200).json(updatedUser);
+  } catch (err) {
+    return handleUnexpectedError(err, response);
+  }
+};
+
+export const getCurrentUserController = async (request: Request, response: UserGetCurrentResponse) => {
+  try {
+    const { session, user } = await sessionModel.getSessionUser(request);
+    response.setHeader("Set-Cookie", sessionModel.createCookieSession(session.token));
+    response.setHeader("Cache-Control", "no-cache, no-store, max-age=0, must-revalidate");
+    return response.status(200).json({
+      session: {
+        updated_at: session.updated_at.toISOString(),
+        expires_at: session.expires_at.toISOString(),
+      },
+      user: {
+        username: user.username,
+        email: user.email,
+        permission: user.permission,
+        updated_at: user.updated_at.toISOString(),
+      },
+    });
   } catch (err) {
     return handleUnexpectedError(err, response);
   }

@@ -64,3 +64,18 @@ export interface UserUpdateResponseBody {
   updated_at: string;
 }
 export type UserUpdateResponse = Response<UserUpdateResponseBody>;
+
+// --- GET current session user ---
+export interface UserGetCurrentResponseBody {
+  session: {
+    updated_at: string;
+    expires_at: string;
+  };
+  user: {
+    username: string;
+    email: string;
+    permission: Permission | null;
+    updated_at: string;
+  };
+}
+export type UserGetCurrentResponse = Response<UserGetCurrentResponseBody>;

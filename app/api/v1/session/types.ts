@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import type { User } from "../users/types";
 
 export interface Session {
   id: string;
@@ -20,6 +21,11 @@ export interface Login {
   email: string;
   password: string;
   userAgent: string;
+}
+
+export interface SessionUser {
+  session: Session;
+  user: User;
 }
 
 // ------ SCHEMAS ------

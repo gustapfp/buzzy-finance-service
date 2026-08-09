@@ -1,10 +1,11 @@
-import { BaseSession, Login, Session } from "./types";
+import { BaseSession, Login, Session, SessionUser } from "./types";
 import { DB } from "infra/database/database";
 import { authManager } from "infra/auth/authManager";
 import { logger } from "api/utils/logger";
 import { Request } from "express";
 import { UnauthorizedError } from "infra/errors/UnauthorizedError";
 import { stringifySetCookie } from "cookie";
+import userModel from "../users/model";
 import {
   CREATE_SESSION_STATEMENT,
   DELETE_SESSION_STATEMENT,
@@ -69,6 +70,17 @@ const validateUserSession = async (req: Request): Promise<Session> => {
   }
 };
 
+const getSessionUser = async (request: Request): Promise<SessionUser> => {
+  try {
+    const session = await validateUserSession(request);
+    const user = await userModel.findOneById(session.user_id);
+    return { session, user };
+  } catch (err) {
+    logger.error(err, "Error getting session user");
+    throw err;
+  }
+};
+
 const login = async (loginObj: Login): Promise<string> => {
   try {
     const user = await authManager.authenticate(loginObj.email, loginObj.password);
@@ -106,6 +118,13 @@ const createCookieSession = (token: string, sessionLengthInDays: number = 30) =>
   });
 };
 
-export const sessionModel = { createSession, validateUserSession, login, logout, createCookieSession };
+export const sessionModel = {
+  createSession,
+  validateUserSession,
+  getSessionUser,
+  login,
+  logout,
+  createCookieSession,
+};
 
 export default sessionModel;
