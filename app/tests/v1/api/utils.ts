@@ -81,17 +81,13 @@ export const updateUser = async (username: string, body: any, cookie?: string, u
   });
 };
 
-const deleteAllEmails = async () => {
+export const deleteAllEmails = async () => {
   await fetch(`${EMAIL_URL}/messages`, {
     method: "DELETE",
   });
 };
 
-const emailListResponse = async () => {
-  return await fetch(`${EMAIL_URL}/messages`);
-};
-
-const getLastEmail = async () => {
+export const getLastEmail = async () => {
   const emailListResponse = await fetch(`${EMAIL_URL}/messages`);
   const emailListBody = await emailListResponse.json();
   const lastEmailItem = emailListBody.pop();
