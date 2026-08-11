@@ -6,6 +6,7 @@ const MIGRATIONS_URL = `${process.env.BASE_URL}/api/v1/migrations`;
 const USERS_ENDPOINT_URL = `${process.env.BASE_URL}/api/v1/user`;
 const SESSION_ENDPOINT_URL = `${process.env.BASE_URL}/api/v1/session`;
 
+const EMAIL_URL = `http://${process.env.EMAIL_HTTP_HOST}:${process.env.EMAIL_HTTP_PORT}`;
 export const cleanDatabase = async (client: Client): Promise<void> => {
   await client.query("DROP SCHEMA IF EXISTS public CASCADE;");
   await client.query("CREATE SCHEMA public;");
@@ -78,4 +79,26 @@ export const updateUser = async (username: string, body: any, cookie?: string, u
     },
     body: JSON.stringify(body),
   });
+};
+
+const deleteAllEmails = async () => {
+  await fetch(`${EMAIL_URL}/messages`, {
+    method: "DELETE",
+  });
+};
+
+const emailListResponse = async () => {
+  return await fetch(`${EMAIL_URL}/messages`);
+};
+
+const getLastEmail = async () => {
+  const emailListResponse = await fetch(`${EMAIL_URL}/messages`);
+  const emailListBody = await emailListResponse.json();
+  const lastEmailItem = emailListBody.pop();
+
+  const emailTextResponse = await fetch(`${EMAIL_URL}/messages/${lastEmailItem.id}.plain`);
+  const emailTextBody = await emailTextResponse.text();
+
+  lastEmailItem.text = emailTextBody;
+  return lastEmailItem;
 };
