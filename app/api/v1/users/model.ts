@@ -1,5 +1,5 @@
 import { DB } from "infra/database/database";
-import { getProvidedValues, newUserIsValid } from "./helpers";
+import { getUserProvidedValues, newUserIsValid } from "./helpers";
 import { logger } from "api/utils/logger";
 import { NotFoundError } from "infra/errors/NotFoundError";
 import { User, UserCreateRequestBody, UserGetByUsernameResponseBody, UserUpdateRequestBody } from "./types";
@@ -43,19 +43,17 @@ const updateUser = async (userUpdates: UserUpdateRequestBody, current_username: 
     if (await newUserIsValid(userUpdates.email, userUpdates.username)) {
       const currentUser = await findOneByUsername(current_username, true);
 
-      const newUserValues = await getProvidedValues(currentUser, userUpdates);
+      const newUserValues = await getUserProvidedValues(currentUser, userUpdates);
       const result = await DB.query(UPDATE_USER_STATEMENT, [
         current_username,
         newUserValues.username,
         newUserValues.email,
         newUserValues.password,
-        newUserValues.permission,
       ]);
       const updatedUser = result.rows[0];
       return {
         username: updatedUser.username,
         email: updatedUser.email,
-        permission: updatedUser.permission,
         updated_at: updatedUser.updated_at,
       };
     }
@@ -118,8 +116,8 @@ const addUserPermission = async (username: string, permission: Permission): Prom
   try {
     const result = await DB.query(ADD_USER_PERMISSION_STATEMENT, [username, permission]);
     if (result.rows.length === 0) {
-      await findOneByUsername(username); // throws NotFoundError if the user doesn't exist
-      return null; // user exists but already has this permission
+      await findOneByUsername(username);
+      return null;
     }
     return result.rows[0];
   } catch (err) {
@@ -132,8 +130,8 @@ const removeUserPermission = async (username: string, permission: Permission): P
   try {
     const result = await DB.query(REMOVE_USER_PERMISSION_STATEMENT, [username, permission]);
     if (result.rows.length === 0) {
-      await findOneByUsername(username); // throws NotFoundError if the user doesn't exist
-      return null; // user exists but didn't have this permission
+      await findOneByUsername(username);
+      return null;
     }
     return result.rows[0];
   } catch (err) {

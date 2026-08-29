@@ -47,7 +47,6 @@ describe("PUT /v1/user/:username", () => {
       expect(body).toEqual({
         username: "newUsername",
         email: seedUser.email,
-        permission: null,
         updated_at: expect.any(String),
       });
     });
@@ -66,7 +65,6 @@ describe("PUT /v1/user/:username", () => {
       expect(body).toEqual({
         username: seedUser.username,
         email: "newemail@gmail.com",
-        permission: null,
         updated_at: expect.any(String),
       });
     });
@@ -85,18 +83,17 @@ describe("PUT /v1/user/:username", () => {
       expect(body).toEqual({
         username: seedUser.username,
         email: seedUser.email,
-        permission: null,
         updated_at: expect.any(String),
       });
       expect(body).not.toHaveProperty("password");
     });
 
-    it("Updates the permission and returns a 200 response", async () => {
+    it("Ignores a permission field in the payload and does not change stored permissions", async () => {
       const response = await updateUser(
         seedUser.username,
         {
           current_username: seedUser.username,
-          permission: "ADMIN",
+          permission: "create:invoice:own",
         },
         cookie,
       );
@@ -105,9 +102,13 @@ describe("PUT /v1/user/:username", () => {
       expect(body).toEqual({
         username: seedUser.username,
         email: seedUser.email,
-        permission: "ADMIN",
         updated_at: expect.any(String),
       });
+
+      const result = await DB.query(`SELECT permission FROM users WHERE LOWER(username) = LOWER($1) LIMIT 1;`, [
+        seedUser.username,
+      ]);
+      expect(result.rows[0].permission).toEqual([PERMISSIONS.READ_OWN_TOKEN]);
     });
 
     it("Updates multiple fields at once", async () => {
@@ -117,7 +118,6 @@ describe("PUT /v1/user/:username", () => {
           current_username: seedUser.username,
           username: "updatedUser",
           email: "updated@gmail.com",
-          permission: "USER",
         },
         cookie,
       );
@@ -126,7 +126,6 @@ describe("PUT /v1/user/:username", () => {
       expect(body).toEqual({
         username: "updatedUser",
         email: "updated@gmail.com",
-        permission: [PERMISSIONS.READ_OWN_TOKEN],
         updated_at: expect.any(String),
       });
     });

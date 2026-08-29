@@ -39,8 +39,7 @@ SET
   username = $2,
   email = $3,
   password = $4,
-  updated_at = timezone('utc', now()),
-  permission = $5
+  updated_at = timezone('utc', now())
 WHERE
   username = $1
 RETURNING *;

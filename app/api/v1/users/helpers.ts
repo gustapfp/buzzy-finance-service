@@ -46,7 +46,7 @@ export const newUserIsValid = async (email?: string, username?: string) => {
   return true;
 };
 
-export const getProvidedValues = async (
+export const getUserProvidedValues = async (
   currentUser: UserGetByUsernameResponseBody,
   userUpdates: UserUpdateRequestBody,
 ) => {
@@ -55,6 +55,5 @@ export const getProvidedValues = async (
   const newPassword = userUpdates.password
     ? await authManager.hashPassword(userUpdates.password)
     : currentUser!.password;
-  const permission = userUpdates.permission ?? currentUser.permission;
-  return { username: newUsername, email: newEmail, password: newPassword, permission: permission };
+  return { username: newUsername, email: newEmail, password: newPassword };
 };

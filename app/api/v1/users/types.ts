@@ -6,7 +6,7 @@ export interface User {
   username: string;
   password: string;
   email: string;
-  permission: Permission;
+  permission: Permission[];
   created_at: Date;
   updated_at: Date;
 }
@@ -21,7 +21,7 @@ export interface UserGetByUsernameResponseBody {
   username: string;
   password?: string; // Internal tooling only
   email: string;
-  permission: Permission;
+  permission: Permission[];
   created_at: string;
   updated_at: string;
 }
@@ -52,7 +52,6 @@ export type UserUpdateRequestBody = {
   username?: string;
   email?: string;
   password?: string;
-  permission?: Permission;
 };
 
 export type UserUpdateRequest = Request<UserUpdateParams, unknown, UserUpdateRequestBody>;
@@ -60,7 +59,6 @@ export type UserUpdateRequest = Request<UserUpdateParams, unknown, UserUpdateReq
 export interface UserUpdateResponseBody {
   username: string;
   email: string;
-  permission?: Permission;
   updated_at: string;
 }
 export type UserUpdateResponse = Response<UserUpdateResponseBody>;
@@ -74,7 +72,7 @@ export interface UserGetCurrentResponseBody {
   user: {
     username: string;
     email: string;
-    permission: Permission | null;
+    permission: Permission[];
     updated_at: string;
   };
 }
