@@ -3,6 +3,7 @@ import { waitForServices } from "infra/scripts/waitForServices";
 import { createUser, updateUser, applyMigrations, cleanDatabase, loginUser, extractSessionCookie } from "../utils";
 import { User } from "api/v1/users/types";
 import { authManager } from "infra/auth/authManager";
+import { PERMISSIONS } from "infra/auth/authorization";
 
 describe("PUT /v1/user/:username", () => {
   let client: any;
@@ -125,7 +126,7 @@ describe("PUT /v1/user/:username", () => {
       expect(body).toEqual({
         username: "updatedUser",
         email: "updated@gmail.com",
-        permission: "USER",
+        permission: [PERMISSIONS.READ_OWN_TOKEN],
         updated_at: expect.any(String),
       });
     });

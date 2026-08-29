@@ -10,13 +10,21 @@ import {
   GET_USER_BY_USERNAME_STATEMENT,
   GET_USER_BY_EMAIL_STATEMENT,
   GET_USER_BY_ID_STATEMENT,
+  ADD_USER_PERMISSION_STATEMENT,
+  REMOVE_USER_PERMISSION_STATEMENT,
 } from "./consts";
+import { Permission, PERMISSIONS } from "infra/auth/authorization";
 
 const createUser = async (user: UserCreateRequestBody) => {
   try {
     if (await newUserIsValid(user.email, user.username)) {
       const hashedPassword = await authManager.hashPassword(user.password);
-      const result = await DB.query(CREATE_USER_STATEMENT, [user.username, user.email, hashedPassword]);
+      const result = await DB.query(CREATE_USER_STATEMENT, [
+        user.username,
+        user.email,
+        hashedPassword,
+        [PERMISSIONS.READ_OWN_TOKEN],
+      ]);
       const newUser: User = result.rows[0];
       return {
         username: newUser.username,
@@ -106,12 +114,42 @@ const findOneById = async (id: string): Promise<User> => {
   }
 };
 
+const addUserPermission = async (username: string, permission: Permission): Promise<User | null> => {
+  try {
+    const result = await DB.query(ADD_USER_PERMISSION_STATEMENT, [username, permission]);
+    if (result.rows.length === 0) {
+      await findOneByUsername(username); // throws NotFoundError if the user doesn't exist
+      return null; // user exists but already has this permission
+    }
+    return result.rows[0];
+  } catch (err) {
+    logger.error(err, "Error adding permission to user");
+    throw err;
+  }
+};
+
+const removeUserPermission = async (username: string, permission: Permission): Promise<User | null> => {
+  try {
+    const result = await DB.query(REMOVE_USER_PERMISSION_STATEMENT, [username, permission]);
+    if (result.rows.length === 0) {
+      await findOneByUsername(username); // throws NotFoundError if the user doesn't exist
+      return null; // user exists but didn't have this permission
+    }
+    return result.rows[0];
+  } catch (err) {
+    logger.error(err, "Error removing permission from user");
+    throw err;
+  }
+};
+
 export const userModel = {
   createUser,
   updateUser,
   findOneByUsername,
   findOneByEmail,
   findOneById,
+  addUserPermission,
+  removeUserPermission,
 };
 
 export default userModel;

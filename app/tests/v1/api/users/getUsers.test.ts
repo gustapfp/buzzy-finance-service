@@ -8,6 +8,7 @@ import {
   loginUser,
   extractSessionCookie,
 } from "../utils";
+import { PERMISSIONS } from "infra/auth/authorization";
 
 describe("GET /v1/user/:username", () => {
   let client: any;
@@ -45,7 +46,7 @@ describe("GET /v1/user/:username", () => {
       expect(userGetResponseBody).toEqual({
         username: user1.username,
         email: user1.email,
-        permission: null,
+        permission: [PERMISSIONS.READ_OWN_TOKEN],
         created_at: expect.any(String),
         updated_at: expect.any(String),
       });
@@ -81,7 +82,7 @@ describe("GET /v1/user/:username", () => {
       expect(userGetResponseBody).toEqual({
         username: user1.username,
         email: user1.email,
-        permission: null,
+        permission: [PERMISSIONS.READ_OWN_TOKEN],
         created_at: expect.any(String),
         updated_at: expect.any(String),
       });

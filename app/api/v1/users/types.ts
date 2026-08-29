@@ -1,12 +1,12 @@
 import type { Request, Response } from "express";
-export type Permission = "ADMIN" | "USER" | "GUEST";
+import { Permission } from "infra/auth/authorization";
 
 export interface User {
   id: string;
   username: string;
   password: string;
   email: string;
-  permission: Permission | null;
+  permission: Permission;
   created_at: Date;
   updated_at: Date;
 }
@@ -21,7 +21,7 @@ export interface UserGetByUsernameResponseBody {
   username: string;
   password?: string; // Internal tooling only
   email: string;
-  permission: Permission | null;
+  permission: Permission;
   created_at: string;
   updated_at: string;
 }

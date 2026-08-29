@@ -1,8 +1,8 @@
 export const CREATE_USER_STATEMENT = `
 INSERT INTO
-  users (username, email, password)
+  users (username, email, password, permission)
 VALUES
-  ($1, $2, $3)
+  ($1, $2, $3, $4)
 RETURNING *;
 `;
 
@@ -43,5 +43,27 @@ SET
   permission = $5
 WHERE
   username = $1
+RETURNING *;
+`;
+
+export const ADD_USER_PERMISSION_STATEMENT = `
+UPDATE users
+SET
+  permission = array_append(permission, $2),
+  updated_at = timezone('utc', now())
+WHERE
+  username = $1
+  AND NOT ($2 = ANY(permission))
+RETURNING *;
+`;
+
+export const REMOVE_USER_PERMISSION_STATEMENT = `
+UPDATE users
+SET
+  permission = array_remove(permission, $2),
+  updated_at = timezone('utc', now())
+WHERE
+  username = $1
+  AND $2 = ANY(permission)
 RETURNING *;
 `;
