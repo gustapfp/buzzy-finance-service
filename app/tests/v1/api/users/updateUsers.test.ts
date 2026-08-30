@@ -3,7 +3,10 @@ import { waitForServices } from "infra/scripts/waitForServices";
 import { createUser, updateUser, applyMigrations, cleanDatabase, loginUser, extractSessionCookie } from "../utils";
 import { User } from "api/v1/users/types";
 import { authManager } from "infra/auth/authManager";
-import { PERMISSIONS } from "infra/auth/authorization";
+import { Permission, PERMISSIONS } from "infra/auth/authorization";
+import userModel from "api/v1/users/model";
+import { NotFoundError } from "infra/errors/NotFoundError";
+import { PermissionError } from "infra/errors/PermissionError";
 
 describe("PUT /v1/user/:username", () => {
   let client: any;
@@ -305,6 +308,124 @@ describe("PUT /v1/user/:username", () => {
         username: "newName",
       });
       expect(response.status).not.toBe(200);
+    });
+  });
+
+  describe("userModel.addUserPermission / removeUserPermission", () => {
+    beforeEach(async () => {
+      client = await DB_POOL.connect();
+      try {
+        await cleanDatabase(client);
+        await applyMigrations();
+      } finally {
+        client.release();
+      }
+      await createUser(seedUser);
+    });
+
+    describe("addUserPermission", () => {
+      it("Adds a new permission and returns the updated user", async () => {
+        const updatedUser = await userModel.addUserPermission(seedUser.username, PERMISSIONS.READ_OWN_SESSION);
+
+        expect(updatedUser).not.toBeNull();
+        expect(updatedUser!.permission).toEqual(
+          expect.arrayContaining([PERMISSIONS.READ_OWN_TOKEN, PERMISSIONS.READ_OWN_SESSION]),
+        );
+        expect(updatedUser!.permission).toHaveLength(2);
+
+        const result = await DB.query(`SELECT permission FROM users WHERE LOWER(username) = LOWER($1) LIMIT 1;`, [
+          seedUser.username,
+        ]);
+        expect(result.rows[0].permission).toEqual(
+          expect.arrayContaining([PERMISSIONS.READ_OWN_TOKEN, PERMISSIONS.READ_OWN_SESSION]),
+        );
+      });
+
+      it("Returns null and leaves the array unchanged when the user already has the permission", async () => {
+        const result = await userModel.addUserPermission(seedUser.username, PERMISSIONS.READ_OWN_TOKEN);
+        expect(result).toBeNull();
+
+        const dbResult = await DB.query(`SELECT permission FROM users WHERE LOWER(username) = LOWER($1) LIMIT 1;`, [
+          seedUser.username,
+        ]);
+        expect(dbResult.rows[0].permission).toEqual([PERMISSIONS.READ_OWN_TOKEN]);
+      });
+
+      it("Throws NotFoundError when the user does not exist", async () => {
+        await expect(userModel.addUserPermission("nonExistentUser", PERMISSIONS.READ_OWN_SESSION)).rejects.toThrow(
+          NotFoundError,
+        );
+      });
+
+      it("Throws PermissionError for a well-formed permission that isn't defined in the PERMISSIONS catalog", async () => {
+        const undocumentedPermission: Permission = "delete:token:any";
+        await expect(userModel.addUserPermission(seedUser.username, undocumentedPermission)).rejects.toThrow(
+          PermissionError,
+        );
+
+        const dbResult = await DB.query(`SELECT permission FROM users WHERE LOWER(username) = LOWER($1) LIMIT 1;`, [
+          seedUser.username,
+        ]);
+        expect(dbResult.rows[0].permission).toEqual([PERMISSIONS.READ_OWN_TOKEN]);
+      });
+
+      it("Throws PermissionError when a non-string value is passed", async () => {
+        await expect(
+          userModel.addUserPermission(seedUser.username, 12345 as unknown as Permission),
+        ).rejects.toThrow(PermissionError);
+      });
+
+      it("Throws PermissionError when permission is undefined", async () => {
+        await expect(
+          userModel.addUserPermission(seedUser.username, undefined as unknown as Permission),
+        ).rejects.toThrow(PermissionError);
+      });
+    });
+
+    describe("removeUserPermission", () => {
+      it("Removes an existing permission and returns the updated user", async () => {
+        const updatedUser = await userModel.removeUserPermission(seedUser.username, PERMISSIONS.READ_OWN_TOKEN);
+
+        expect(updatedUser).not.toBeNull();
+        expect(updatedUser!.permission).toEqual([]);
+      });
+
+      it("Returns null and leaves the array unchanged when the user doesn't have the permission", async () => {
+        const result = await userModel.removeUserPermission(seedUser.username, PERMISSIONS.READ_OWN_SESSION);
+        expect(result).toBeNull();
+
+        const dbResult = await DB.query(`SELECT permission FROM users WHERE LOWER(username) = LOWER($1) LIMIT 1;`, [
+          seedUser.username,
+        ]);
+        expect(dbResult.rows[0].permission).toEqual([PERMISSIONS.READ_OWN_TOKEN]);
+      });
+
+      it("Throws NotFoundError when the user does not exist", async () => {
+        await expect(userModel.removeUserPermission("nonExistentUser", PERMISSIONS.READ_OWN_TOKEN)).rejects.toThrow(
+          NotFoundError,
+        );
+      });
+
+      it("Throws PermissionError for a well-formed permission that isn't defined in the PERMISSIONS catalog", async () => {
+        const undocumentedPermission: Permission = "delete:token:any";
+        await expect(userModel.removeUserPermission(seedUser.username, undocumentedPermission)).rejects.toThrow(
+          PermissionError,
+        );
+      });
+
+      it("Removes every occurrence if the same permission was stored more than once", async () => {
+        await DB.query(`UPDATE users SET permission = permission || $2 WHERE LOWER(username) = LOWER($1);`, [
+          seedUser.username,
+          [PERMISSIONS.READ_OWN_TOKEN],
+        ]);
+        const before = await DB.query(`SELECT permission FROM users WHERE LOWER(username) = LOWER($1) LIMIT 1;`, [
+          seedUser.username,
+        ]);
+        expect(before.rows[0].permission).toEqual([PERMISSIONS.READ_OWN_TOKEN, PERMISSIONS.READ_OWN_TOKEN]);
+
+        const updatedUser = await userModel.removeUserPermission(seedUser.username, PERMISSIONS.READ_OWN_TOKEN);
+        expect(updatedUser!.permission).toEqual([]);
+      });
     });
   });
 
