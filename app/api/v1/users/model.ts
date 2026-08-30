@@ -1,5 +1,5 @@
 import { DB } from "infra/database/database";
-import { getUserProvidedValues, newUserIsValid } from "./helpers";
+import { getUserProvidedValues, newUserIsValid, sendUserActivationEmail } from "./helpers";
 import { logger } from "api/utils/logger";
 import { NotFoundError } from "infra/errors/NotFoundError";
 import { User, UserCreateRequestBody, UserGetByUsernameResponseBody, UserUpdateRequestBody } from "./types";
@@ -13,7 +13,8 @@ import {
   ADD_USER_PERMISSION_STATEMENT,
   REMOVE_USER_PERMISSION_STATEMENT,
 } from "./consts";
-import { Permission, PERMISSIONS } from "infra/auth/authorization";
+import { Permission, PERMISSIONS, isValidPermission } from "infra/auth/authorization";
+import { PermissionError } from "infra/errors/PermissionError";
 
 const createUser = async (user: UserCreateRequestBody) => {
   try {
@@ -25,7 +26,9 @@ const createUser = async (user: UserCreateRequestBody) => {
         hashedPassword,
         [PERMISSIONS.READ_OWN_TOKEN],
       ]);
+
       const newUser: User = result.rows[0];
+      await sendUserActivationEmail(newUser);
       return {
         username: newUser.username,
         created_at: newUser.created_at.toISOString(),
@@ -114,6 +117,9 @@ const findOneById = async (id: string): Promise<User> => {
 
 const addUserPermission = async (username: string, permission: Permission): Promise<User | null> => {
   try {
+    if (!isValidPermission(permission)) {
+      throw new PermissionError(null, permission);
+    }
     const result = await DB.query(ADD_USER_PERMISSION_STATEMENT, [username, permission]);
     if (result.rows.length === 0) {
       await findOneByUsername(username);
@@ -128,6 +134,9 @@ const addUserPermission = async (username: string, permission: Permission): Prom
 
 const removeUserPermission = async (username: string, permission: Permission): Promise<User | null> => {
   try {
+    if (!isValidPermission(permission)) {
+      throw new PermissionError(null, permission);
+    }
     const result = await DB.query(REMOVE_USER_PERMISSION_STATEMENT, [username, permission]);
     if (result.rows.length === 0) {
       await findOneByUsername(username);

@@ -15,3 +15,6 @@ export const PERMISSIONS = {
   READ_OWN_SESSION: "read:session:own",
   READ_OWN_TOKEN: "read:token:own",
 } as const satisfies Record<string, Permission>;
+
+export const isValidPermission = (permission: unknown): permission is Permission =>
+  typeof permission === "string" && (Object.values(PERMISSIONS) as string[]).includes(permission);

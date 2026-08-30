@@ -370,9 +370,9 @@ describe("PUT /v1/user/:username", () => {
       });
 
       it("Throws PermissionError when a non-string value is passed", async () => {
-        await expect(
-          userModel.addUserPermission(seedUser.username, 12345 as unknown as Permission),
-        ).rejects.toThrow(PermissionError);
+        await expect(userModel.addUserPermission(seedUser.username, 12345 as unknown as Permission)).rejects.toThrow(
+          PermissionError,
+        );
       });
 
       it("Throws PermissionError when permission is undefined", async () => {

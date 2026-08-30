@@ -1,7 +1,8 @@
 import { DB } from "infra/database/database";
 import { ValidationError } from "infra/errors/ValidationError";
-import { UserGetByUsernameResponseBody, UserUpdateRequestBody } from "./types";
+import { User, UserGetByUsernameResponseBody, UserUpdateRequestBody } from "./types";
 import { authManager } from "infra/auth/authManager";
+import { activationManager } from "infra/auth/activation";
 
 const thisEmailAlreadyExits = async (email: string): Promise<boolean> => {
   const statement = `
@@ -56,4 +57,9 @@ export const getUserProvidedValues = async (
     ? await authManager.hashPassword(userUpdates.password)
     : currentUser!.password;
   return { username: newUsername, email: newEmail, password: newPassword };
+};
+
+export const sendUserActivationEmail = async (newUser: User) => {
+  const activationToken = await activationManager.createActivationToken(newUser.id);
+  return await activationManager.sendTokenToUserEmail(newUser, activationToken);
 };
