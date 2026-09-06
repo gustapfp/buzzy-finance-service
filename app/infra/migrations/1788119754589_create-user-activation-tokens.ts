@@ -22,20 +22,20 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
       unique: true,
     },
     used_at: {
-      type: "timestamp",
+      type: "timestamptz",
       notNull: false,
     },
     expires_at: {
-      type: "timestamp",
+      type: "timestamptz",
       notNull: true,
     },
     created_at: {
-      type: "timestamp",
+      type: "timestamptz",
       notNull: true,
       default: pgm.func("timezone('utc', now())"),
     },
     updated_at: {
-      type: "timestamp",
+      type: "timestamptz",
       notNull: true,
       default: pgm.func("timezone('utc', now())"),
     },
