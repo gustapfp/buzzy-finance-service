@@ -388,10 +388,10 @@ describe("User activation", () => {
 
         const response = await activateUser(payload);
         expect(response.status).toBe(404);
-        const body = await response.json();
+        const body = (await response.json()) as { name: string; status_code: number };
         expect(body.name).toBe("not_found_error");
 
-        const tableExists = await DB.query(`SELECT to_regclass('public.user_activation_tokens') AS table_name;`);
+        const tableExists = await DB.query(`SELECT to_regclass('public.user_activation_tokens') AS table_name;`, []);
         expect(tableExists.rows[0].table_name).toBe("user_activation_tokens");
 
         const [tokenAfter] = await getActivationTokensForUser(user.id);
@@ -416,7 +416,7 @@ describe("User activation", () => {
         method: "GET",
       });
       expect(getResponse.status).toBe(405);
-      const body = await getResponse.json();
+      const body = (await getResponse.json()) as { name: string; status_code: number };
       expect(body.name).toBe("method_not_allowed");
 
       const [tokenAfterGet] = await getActivationTokensForUser(user.id);
