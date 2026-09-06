@@ -16,8 +16,8 @@ SET
   used_at = timezone('utc', now()),
   updated_at = timezone('utc', now())
 WHERE
-  user_id = $1
-  AND token = $2
+  token = $1
+  AND used_at IS NULL
   AND expires_at > timezone('utc', now())
 RETURNING *;
 `;

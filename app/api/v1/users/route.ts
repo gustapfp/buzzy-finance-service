@@ -17,6 +17,6 @@ usersRouter
   .put(updateUserController)
   .all(catchNotAllowedMethods);
 
-usersRouter.route("/user/activate").post(activateUserController).all(catchNotAllowedMethods);
+usersRouter.route("/user/activate").patch(activateUserController).all(catchNotAllowedMethods);
 
 export default usersRouter;

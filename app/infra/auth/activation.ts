@@ -7,7 +7,7 @@ import {
   VALIDATE_ACTIVATION_TOKEN_STATEMENT,
 } from "./consts";
 import { ActivationToken } from "./types";
-import { logger } from "api/utils/logger";
+import { NotFoundError } from "infra/errors/NotFoundError";
 
 const createActivationToken = async (user_id: string): Promise<ActivationToken> => {
   const expiresAt = new Date(Date.now() + ACTIVATION_TOKEN_EXPIRES_AT);
@@ -16,9 +16,7 @@ const createActivationToken = async (user_id: string): Promise<ActivationToken> 
 };
 
 const sendTokenToUserEmail = async (user: User, token: ActivationToken) => {
-  const activationLink =
-    `${process.env.WEBAPP_URL}/register/activate?token=${encodeURIComponent(token.token)}` +
-    `&email=${encodeURIComponent(user.email)}`;
+  const activationLink = `${process.env.WEBAPP_URL}/register/activate?token=${encodeURIComponent(token.token)}`;
 
   return mailManager.sendEmail({
     from: process.env.EMAIL_SENDER || "",
@@ -33,13 +31,15 @@ const sendTokenToUserEmail = async (user: User, token: ActivationToken) => {
   });
 };
 
-const activateUserToken = async (token: string, user_id: string): Promise<ActivationToken | null> => {
+const activateUserToken = async (token: string): Promise<ActivationToken> => {
   try {
-    const activationToken = await DB.query(VALIDATE_ACTIVATION_TOKEN_STATEMENT, [token, user_id]);
+    const activationToken = await DB.query(VALIDATE_ACTIVATION_TOKEN_STATEMENT, [token]);
+    if (!activationToken.rows[0]) {
+      throw new NotFoundError(null, "Activation token not found or expired", "Please request a new activation token.");
+    }
     return activationToken.rows[0];
   } catch (error) {
-    logger.error(error, "Error validating activation token");
-    return null;
+    throw new NotFoundError(error, "Activation token not found or expired", "Please request a new activation token.");
   }
 };
 

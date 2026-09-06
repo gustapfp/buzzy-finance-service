@@ -12,6 +12,7 @@ import type {
 import type { Request, Response } from "express";
 import sessionModel from "../session/model";
 import { activationManager } from "infra/auth/activation";
+import { PERMISSIONS } from "infra/auth/authorization";
 
 export const getOneUserByUsernameController = async (
   request: UserGetByUsernameRequest,
@@ -68,12 +69,10 @@ export const getCurrentUserController = async (request: Request, response: UserG
 
 export const activateUserController = async (request: Request, response: Response) => {
   try {
-    const { token, email } = request.query;
-    const user = await userModel.findOneByEmail(email as string);
-    const isTokenValid = await activationManager.activateUserToken(token as string, user.id);
-    if (!isTokenValid) {
-      return response.status(400).json({ message: "Invalid or expired activation token" });
-    }
+    const { token } = request.query;
+    const activationToken = await activationManager.activateUserToken(token as string);
+    const user = await userModel.findOneById(activationToken.user_id);
+    await userModel.addUserPermission(user.username, PERMISSIONS.CREATE_OWN_SESSION);
     return response.status(200).json({ message: "User activated successfully" });
   } catch (err) {
     return handleUnexpectedError(err, response);
