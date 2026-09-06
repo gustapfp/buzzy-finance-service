@@ -9,3 +9,15 @@ VALUES
   ($1, $2)
 RETURNING *;
 `;
+
+export const VALIDATE_ACTIVATION_TOKEN_STATEMENT = `
+UPDATE user_activation_tokens
+SET
+  used_at = timezone('utc', now()),
+  updated_at = timezone('utc', now())
+WHERE
+  user_id = $1
+  AND token = $2
+  AND expires_at > timezone('utc', now())
+RETURNING *;
+`;

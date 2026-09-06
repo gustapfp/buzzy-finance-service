@@ -15,6 +15,12 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
       references: "users(id)",
       onDelete: "CASCADE",
     },
+    token: {
+      type: "uuid",
+      notNull: true,
+      default: pgm.func("gen_random_uuid()"),
+      unique: true,
+    },
     used_at: {
       type: "timestamp",
       notNull: false,

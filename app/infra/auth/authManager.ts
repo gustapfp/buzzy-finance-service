@@ -6,12 +6,12 @@ import { UnauthorizedError } from "infra/errors/UnauthorizedError";
 import { logger } from "api/utils/logger";
 import userModel from "api/v1/users/model";
 
-const hashPassword = async (password: string): Promise<string> => {
-  const hash = await bcrypt.hashSync(`${password}.${APP_SECRET}`, SALT_ROUNDS);
+const hashPassword = (password: string): string => {
+  const hash = bcrypt.hashSync(`${password}.${APP_SECRET}`, SALT_ROUNDS);
   return hash;
 };
-const comparePassword = async (password: string, hash: string): Promise<boolean> => {
-  const passwordIsValid = await bcrypt.compareSync(`${password}.${APP_SECRET}`, hash);
+const comparePassword = (password: string, hash: string): boolean => {
+  const passwordIsValid = bcrypt.compareSync(`${password}.${APP_SECRET}`, hash);
   if (!passwordIsValid) {
     throw new UnauthorizedError(null);
   }
@@ -41,7 +41,7 @@ const getTokenFromCookie = (req: Request) => {
 const authenticate = async (email: string, password: string) => {
   try {
     const user = await userModel.findOneByEmail(email);
-    await comparePassword(password, user.password);
+    comparePassword(password, user.password);
     return user;
   } catch (err) {
     logger.error(err, "Error authenticating");

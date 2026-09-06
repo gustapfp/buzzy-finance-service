@@ -53,9 +53,7 @@ export const getUserProvidedValues = async (
 ) => {
   const newUsername = userUpdates.username ?? currentUser.username;
   const newEmail = userUpdates.email ?? currentUser.email;
-  const newPassword = userUpdates.password
-    ? await authManager.hashPassword(userUpdates.password)
-    : currentUser!.password;
+  const newPassword = userUpdates.password ? authManager.hashPassword(userUpdates.password) : currentUser!.password;
   return { username: newUsername, email: newEmail, password: newPassword };
 };
 

@@ -82,8 +82,8 @@ describe("POST /v1/users", () => {
 
       expect(user.password).not.toBe(user1.password);
       expect(user.password).toMatch(/^\$2[aby]\$\d{2}\$.{53}$/);
-      expect(await authManager.comparePassword(user1.password, user.password)).toBe(true);
-      await expect(authManager.comparePassword("hashed password", user.password)).rejects.toThrow();
+      expect(authManager.comparePassword(user1.password, user.password)).toBe(true);
+      expect(() => authManager.comparePassword("hashed password", user.password)).toThrow();
     });
     it("Rejects empty password", async () => {
       const response = await createUser({ username: "user1", email: "user1@gmail.com", password: "" });

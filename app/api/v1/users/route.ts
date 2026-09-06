@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  activateUserController,
   createUserController,
   getCurrentUserController,
   getOneUserByUsernameController,
@@ -15,5 +16,7 @@ usersRouter
   .get(getOneUserByUsernameController)
   .put(updateUserController)
   .all(catchNotAllowedMethods);
+
+usersRouter.route("/user/activate").post(activateUserController).all(catchNotAllowedMethods);
 
 export default usersRouter;

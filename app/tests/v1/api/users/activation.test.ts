@@ -51,6 +51,7 @@ describe("User activation", () => {
       expect(columns).toEqual({
         id: "NO",
         user_id: "NO",
+        token: "NO",
         used_at: "YES",
         expires_at: "NO",
         created_at: "NO",
@@ -128,7 +129,7 @@ describe("User activation", () => {
 
       expect(lastEmail.subject).toBe("Ative a sua conta na Buzzy Finance");
       expect(lastEmail.recipients[0]).toBe(`<${user.email}>`);
-      expect(lastEmail.text).toContain(token.id);
+      expect(lastEmail.text).toContain(token.token);
     });
   });
 
@@ -159,7 +160,7 @@ describe("User activation", () => {
 
       const lastEmail = await getLastEmail();
       expect(lastEmail.recipients[0]).toBe(`<${user.email}>`);
-      expect(lastEmail.text).toContain(newToken.id);
+      expect(lastEmail.text).toContain(newToken.token);
     });
   });
 
@@ -188,7 +189,7 @@ describe("User activation", () => {
       const lastEmail = await getLastEmail();
       expect(lastEmail.subject).toBe("Ative a sua conta na Buzzy Finance");
       expect(lastEmail.recipients[0]).toBe(`<${user.email}>`);
-      expect(lastEmail.text).toContain(tokens[0].id);
+      expect(lastEmail.text).toContain(tokens[0].token);
     });
   });
 

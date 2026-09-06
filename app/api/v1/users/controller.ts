@@ -9,8 +9,9 @@ import type {
   UserUpdateResponse,
   UserGetCurrentResponse,
 } from "./types";
-import type { Request } from "express";
+import type { Request, Response } from "express";
 import sessionModel from "../session/model";
+import { activationManager } from "infra/auth/activation";
 
 export const getOneUserByUsernameController = async (
   request: UserGetByUsernameRequest,
@@ -60,6 +61,20 @@ export const getCurrentUserController = async (request: Request, response: UserG
         updated_at: user.updated_at.toISOString(),
       },
     });
+  } catch (err) {
+    return handleUnexpectedError(err, response);
+  }
+};
+
+export const activateUserController = async (request: Request, response: Response) => {
+  try {
+    const { token, email } = request.query;
+    const user = await userModel.findOneByEmail(email as string);
+    const isTokenValid = await activationManager.activateUserToken(token as string, user.id);
+    if (!isTokenValid) {
+      return response.status(400).json({ message: "Invalid or expired activation token" });
+    }
+    return response.status(200).json({ message: "User activated successfully" });
   } catch (err) {
     return handleUnexpectedError(err, response);
   }

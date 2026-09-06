@@ -19,7 +19,7 @@ import { PermissionError } from "infra/errors/PermissionError";
 const createUser = async (user: UserCreateRequestBody) => {
   try {
     if (await newUserIsValid(user.email, user.username)) {
-      const hashedPassword = await authManager.hashPassword(user.password);
+      const hashedPassword = authManager.hashPassword(user.password);
       const result = await DB.query(CREATE_USER_STATEMENT, [
         user.username,
         user.email,
