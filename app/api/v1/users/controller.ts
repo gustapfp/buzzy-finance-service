@@ -72,7 +72,7 @@ export const activateUserController = async (request: Request, response: Respons
     const { token } = request.query;
     const activationToken = await activationManager.activateUserToken(token as string);
     const user = await userModel.findOneById(activationToken.user_id);
-    await userModel.addUserPermission(user.username, PERMISSIONS.CREATE_OWN_SESSION);
+    await userModel.setUserPermissions(user.username, [PERMISSIONS.CREATE_OWN_SESSION]);
     return response.status(200).json({ message: "User activated successfully" });
   } catch (err) {
     return handleUnexpectedError(err, response);

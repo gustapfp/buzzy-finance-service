@@ -12,6 +12,7 @@ import {
   GET_USER_BY_ID_STATEMENT,
   ADD_USER_PERMISSION_STATEMENT,
   REMOVE_USER_PERMISSION_STATEMENT,
+  SET_USER_PERMISSIONS_STATEMENT,
 } from "./consts";
 import { Permission, PERMISSIONS, isValidPermission } from "infra/auth/authorization";
 import { PermissionError } from "infra/errors/PermissionError";
@@ -149,6 +150,24 @@ const removeUserPermission = async (username: string, permission: Permission): P
   }
 };
 
+const setUserPermissions = async (username: string, permissions: Permission[]): Promise<User | null> => {
+  try {
+    const invalidPermission = permissions.find((permission) => !isValidPermission(permission));
+    if (invalidPermission) {
+      throw new PermissionError(null, invalidPermission);
+    }
+    const result = await DB.query(SET_USER_PERMISSIONS_STATEMENT, [username, permissions]);
+    if (result.rows.length === 0) {
+      await findOneByUsername(username);
+      return null;
+    }
+    return result.rows[0];
+  } catch (err) {
+    logger.error(err, "Error setting user permissions");
+    throw err;
+  }
+};
+
 export const userModel = {
   createUser,
   updateUser,
@@ -157,6 +176,7 @@ export const userModel = {
   findOneById,
   addUserPermission,
   removeUserPermission,
+  setUserPermissions,
 };
 
 export default userModel;

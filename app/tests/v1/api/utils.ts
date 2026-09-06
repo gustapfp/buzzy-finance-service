@@ -69,6 +69,16 @@ export const parseLoginBody = async (response: Response): Promise<LoginResponseB
   return (await response.json()) as LoginResponseBody;
 };
 
+export const activateUser = async (token: string, userAgent = "jest-test-agent") => {
+  return await fetch(`${USERS_ENDPOINT_URL}/activate?${new URLSearchParams({ token })}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      "User-Agent": userAgent,
+    },
+  });
+};
+
 export const updateUser = async (username: string, body: any, cookie?: string, userAgent = "jest-test-agent") => {
   return await fetch(`${USERS_ENDPOINT_URL}/${username}`, {
     method: "PUT",

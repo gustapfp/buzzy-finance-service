@@ -66,3 +66,13 @@ WHERE
   AND $2 = ANY(permission)
 RETURNING *;
 `;
+
+export const SET_USER_PERMISSIONS_STATEMENT = `
+UPDATE users
+SET
+  permission = $2,
+  updated_at = timezone('utc', now())
+WHERE
+  username = $1
+RETURNING *;
+`;
