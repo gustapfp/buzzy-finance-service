@@ -1,0 +1,15 @@
+---
+description: TypeScript strictness, formatting, logging, and comments in the backend
+globs: backend/**/*.ts
+alwaysApply: false
+---
+
+# TypeScript
+
+TypeScript is `strict` with `noUncheckedIndexedAccess`. Do not silence it with `as any` or `@ts-ignore`. `no-explicit-any` is off, but a new `any` still needs a reason.
+
+Formatting is Prettier (120 columns, 2 spaces, LF). Run `pnpm lint:prettier` rather than hand-aligning.
+
+Logging uses the pino `logger`. No `console.log`.
+
+Do not write comments unless the code cannot say it: a non-obvious constraint, a workaround and why it exists, or a contract mirrored from outside this repo. Do not narrate the next line. Do not leave commented-out code or TODOs.

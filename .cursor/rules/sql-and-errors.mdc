@@ -1,0 +1,22 @@
+---
+description: Parameterized SQL and BaseError usage in the backend
+globs: backend/app/api/**/consts.ts,backend/app/api/**/model.ts,backend/app/infra/errors/**
+alwaysApply: false
+---
+
+# SQL and errors
+
+SQL lives in `consts.ts` as named `*_STATEMENT` constants and is always parameterized. String interpolation into SQL is never acceptable. Run queries through `DB.query` from `infra/database/database`. If you take a client from the pool, release it in a `finally`.
+
+```typescript
+export const GET_USER_BY_USERNAME_STATEMENT = `
+SELECT *
+FROM users
+WHERE
+  LOWER(username) = LOWER($1)
+LIMIT
+  1;
+`;
+```
+
+Throw a subclass of `BaseError` from `app/infra/errors/`: `ValidationError` (422), `NotFoundError`, `UnauthorizedError`, `PermissionError`, `ServiceUnavailableError`, `MethodNotAllowed`, `InternalServerError`. Do not call `response.status(500)` by hand, and do not invent a new status-code shape. A new error kind is a new `BaseError` subclass.
