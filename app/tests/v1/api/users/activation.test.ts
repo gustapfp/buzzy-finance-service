@@ -130,9 +130,30 @@ describe("User activation", () => {
       expect(body).toEqual(RESEND_BODY);
       const emails = await listEmails();
       expect(emails.length).toBeGreaterThanOrEqual(2);
+      const emailUrl = `http://${process.env.EMAIL_HTTP_HOST}:${process.env.EMAIL_HTTP_PORT}`;
+      for (const item of emails) {
+        const text = await (await fetch(`${emailUrl}/messages/${item.id}.plain`)).text();
+        const token = activationTokenFromEmail(text);
+        const link = `${process.env.WEBAPP_URL}/register/activate?token=${encodeURIComponent(token)}`;
+        expect(item.subject).toBe("Ative a sua conta na Buzzy Finance");
+        expect(text.replace(/\r\n/g, "\n").trimEnd()).toBe(
+          `Olá ${seedUser.username},\n\nPor favor, ative a sua conta clicando no seguinte link:\n\n${link}\n\n Nos vemos logo. Muito Obrigado!`,
+        );
+        const payloadPart = token.split(".")[1] ?? "";
+        const payload = JSON.parse(Buffer.from(payloadPart, "base64url").toString("utf8")) as {
+          email?: string;
+          username?: string;
+          iat: number;
+          exp: number;
+        };
+        expect(payload.email).toBe(seedUser.email.toLowerCase());
+        expect(payload).not.toHaveProperty("username");
+        expect(Math.abs(payload.exp - (payload.iat + 900))).toBeLessThanOrEqual(2);
+      }
       const activated = await activateUser(previousToken);
       expect(activated.status).toBe(200);
       expect(await activated.json()).toEqual({ message: "User activated successfully" });
+      expect(activated.headers.get("set-cookie")).toBeNull();
       expect(await permissionFor(seedUser.username)).toEqual([PERMISSIONS.CREATE_OWN_SESSION]);
     });
 

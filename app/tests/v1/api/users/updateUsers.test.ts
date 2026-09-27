@@ -477,12 +477,18 @@ describe("PUT /v1/user/:username", () => {
       expect(body).not.toHaveProperty("password");
 
       const newLogin = await loginUser({ email: seedUser.email, password: newPassword });
+      const newLoginBody = await newLogin.json();
+      const sessionCookie = newLogin.headers
+        .getSetCookie()
+        .find((cookie) => cookie.startsWith("better-auth.session_token="));
       expect(newLogin.status).toBe(200);
-      expect(await newLogin.json()).toEqual({});
-      expect(newLogin.headers.getSetCookie().some((cookie) => cookie.includes("better-auth.session_token="))).toBe(
-        true,
-      );
-      expect(newLogin.headers.getSetCookie().some((cookie) => /;\s*Secure(?:;|$)/.test(cookie))).toBe(false);
+      expect(newLoginBody).toEqual({});
+      expect(newLoginBody).not.toHaveProperty("session_token");
+      expect(newLoginBody).not.toHaveProperty("password");
+      expect(sessionCookie).toContain("HttpOnly");
+      expect(sessionCookie).toContain("Path=/");
+      expect(sessionCookie).toContain("Max-Age=2592000");
+      expect(sessionCookie).not.toMatch(/;\s*Secure(?:;|$)/);
 
       const oldLogin = await loginUser({ email: seedUser.email, password: seedUser.password });
       expect(oldLogin.status).toBe(401);
@@ -528,11 +534,19 @@ describe("PUT /v1/user/:username", () => {
         { email: "Renamed@gmail.com" },
         extractSessionCookie(firstLogin),
       );
-      const body = (await response.json()) as { email: string; updated_at: string; password?: string };
+      const body = (await response.json()) as {
+        username: string;
+        email: string;
+        updated_at: string;
+        password?: string;
+      };
       const stored = await DB.query(`SELECT email FROM users WHERE username = $1`, [seedUser.username]);
       expect(response.status).toBe(200);
-      expect(body.email).toBe(stored.rows[0].email);
-      expect(body.updated_at).toMatch(ISO_TIMESTAMP);
+      expect(body).toEqual({
+        username: seedUser.username,
+        email: stored.rows[0].email,
+        updated_at: expect.stringMatching(ISO_TIMESTAMP),
+      });
       expect(body).not.toHaveProperty("password");
       expect(await listEmails()).toHaveLength(0);
       expect((await getCurrentUser(extractSessionCookie(firstLogin))).status).toBe(200);
