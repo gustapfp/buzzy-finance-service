@@ -57,12 +57,12 @@ A verified provider return is an `account` row on the `users` row with that emai
 
 ## Work
 
-| Slice                                    | Delivers                                                                                          | Status |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------- | ------ |
-| [Providers](#providers)                  | Google and Microsoft apps whose redirect URI is the callback in Key decision 5, and the four secrets | clear  |
-| [Provider return](#provider-return)      | A verified email attached to the existing user, or a refusal with no user                        | clear  |
-| [Username](#username)                    | A new `users` row only after a username, then the session cookie                                  | clear  |
-| [Webapp](#webapp)                        | The two buttons, the username screen, and the login screen the refusal lands on                  | clear  |
+| Slice                               | Delivers                                                                                             | Status |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------- | ------ |
+| [Providers](#providers)             | Google and Microsoft apps whose redirect URI is the callback in Key decision 5, and the four secrets | clear  |
+| [Provider return](#provider-return) | A verified email attached to the existing user, or a refusal with no user                            | clear  |
+| [Username](#username)               | A new `users` row only after a username, then the session cookie                                     | clear  |
+| [Webapp](#webapp)                   | The two buttons, the username screen, and the login screen the refusal lands on                      | clear  |
 
 Order: Providers → Provider return → Username. Webapp after those routes exist.
 
@@ -74,12 +74,12 @@ Derivable from the repository, left to the plan: error bodies, ISO dates, and ne
 
 **Delivers** a Google app and a Microsoft app that send the browser back to this API, and the secrets this API reads. **Status: clear.**
 
-| State                                      | What exists                                                                                          |
-| ------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| Local and production                       | Each environment's `{BASE_URL}/api/auth/callback/google` and `{BASE_URL}/api/auth/callback/microsoft` is an authorized redirect URI. Local `BASE_URL` is `http://localhost:8080`. |
-| Google                                     | One web OAuth client. The client id and secret are `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.   |
-| Microsoft                                  | One app that accepts personal and work accounts. The client id and secret are `MICROSOFT_CLIENT_ID` and `MICROSOFT_CLIENT_SECRET`. The ID token is allowed to carry `email`. |
-| Secrets                                    | The four values are in `.env.development`, `.env.prod`, and the CI `TEST_ENV` secret. They are not in git. |
+| State                | What exists                                                                                                                                                                       |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Local and production | Each environment's `{BASE_URL}/api/auth/callback/google` and `{BASE_URL}/api/auth/callback/microsoft` is an authorized redirect URI. Local `BASE_URL` is `http://localhost:8080`. |
+| Google               | One web OAuth client. The client id and secret are `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.                                                                                 |
+| Microsoft            | One app that accepts personal and work accounts. The client id and secret are `MICROSOFT_CLIENT_ID` and `MICROSOFT_CLIENT_SECRET`. The ID token is allowed to carry `email`.      |
+| Secrets              | The four values are in `.env.development`, `.env.prod`, and the CI `TEST_ENV` secret. They are not in git.                                                                        |
 
 A redirect URI copied from the Better Auth docs (`localhost:3000`, or a path other than `/api/auth/callback/…`) never reaches this API. Key decision 5.
 
@@ -87,12 +87,12 @@ A redirect URI copied from the Better Auth docs (`localhost:3000`, or a path oth
 
 **Delivers** the attach-or-refuse outcome for a browser that comes back from Google or Microsoft. **Status: clear.** This is the door.
 
-| State                                      | What should happen                                                                                     | Caller sees                                      |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
-| Email already on `users`, provider marks it verified | Attach. Keep `username`. Key decision 1. Set the session cookie.                                      | Browser lands on `WEBAPP_URL` with the cookie    |
-| Email not on `users`, provider marks it verified     | No `users` row and no cookie. Tokens wait in `verification`. Key decision 2.                          | Browser lands on `WEBAPP_URL/register/username?token=…` |
-| No email, email not marked verified, or consent denied | No `users` write and no cookie. Key decision 4.                                                      | Browser lands on `WEBAPP_URL/login`              |
-| Same provider identity already attached    | A new session. `username` and `permission` stay as they are.                                           | Browser lands on `WEBAPP_URL` with the cookie    |
+| State                                                  | What should happen                                                           | Caller sees                                             |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Email already on `users`, provider marks it verified   | Attach. Keep `username`. Key decision 1. Set the session cookie.             | Browser lands on `WEBAPP_URL` with the cookie           |
+| Email not on `users`, provider marks it verified       | No `users` row and no cookie. Tokens wait in `verification`. Key decision 2. | Browser lands on `WEBAPP_URL/register/username?token=…` |
+| No email, email not marked verified, or consent denied | No `users` write and no cookie. Key decision 4.                              | Browser lands on `WEBAPP_URL/login`                     |
+| Same provider identity already attached                | A new session. `username` and `permission` stay as they are.                 | Browser lands on `WEBAPP_URL` with the cookie           |
 
 `GET /api/v1/session/login/google` → `302` to Google
 
@@ -100,10 +100,10 @@ A redirect URI copied from the Better Auth docs (`localhost:3000`, or a path oth
 
 `account` gains one unique index. No new table. `verification` already exists and is where the tokens wait.
 
-| Column        | Type | Null | References | Note                                                                 |
-| ------------- | ---- | ---- | ---------- | -------------------------------------------------------------------- |
+| Column        | Type | Null | References | Note                                                                        |
+| ------------- | ---- | ---- | ---------- | --------------------------------------------------------------------------- |
 | `provider_id` | text | no   |            | Existing. `credential`, `google`, or `microsoft`. Part of the unique index. |
-| `account_id`  | text | no   |            | Existing. The provider's own subject. Part of the unique index.      |
+| `account_id`  | text | no   |            | Existing. The provider's own subject. Part of the unique index.             |
 
 ```mermaid
 sequenceDiagram
@@ -132,13 +132,13 @@ sequenceDiagram
 
 **Delivers** the `users` row and the session cookie for a person who was sent to the username screen. **Status: clear.**
 
-| State                                      | What should happen                                                                 | Caller sees                          |
-| ------------------------------------------ | ---------------------------------------------------------------------------------- | ------------------------------------ |
-| New username, live token                   | `users` is stored with that username, the email from the token, and `permission` `["create:session:own"]`. One `account` row. Then the session cookie. Key decision 3. | 200 `{}` and `Set-Cookie`            |
-| Username already used                      | No `users` row. The token stays valid.                                             | 422                                  |
-| Email stored since the provider returned   | The existing `users` row wins. The submitted username is ignored. Key decision 3.  | 200 `{}` and `Set-Cookie`            |
-| Expired or unknown token                   | Nothing is stored.                                                                 | 404                                  |
-| Two submits of the same new username       | One `users` row and one `account` row. Key decision 3.                             | One 200. The other is 422 or 200 on the row that won. |
+| State                                    | What should happen                                                                                                                                                     | Caller sees                                           |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| New username, live token                 | `users` is stored with that username, the email from the token, and `permission` `["create:session:own"]`. One `account` row. Then the session cookie. Key decision 3. | 200 `{}` and `Set-Cookie`                             |
+| Username already used                    | No `users` row. The token stays valid.                                                                                                                                 | 422                                                   |
+| Email stored since the provider returned | The existing `users` row wins. The submitted username is ignored. Key decision 3.                                                                                      | 200 `{}` and `Set-Cookie`                             |
+| Expired or unknown token                 | Nothing is stored.                                                                                                                                                     | 404                                                   |
+| Two submits of the same new username     | One `users` row and one `account` row. Key decision 3.                                                                                                                 | One 200. The other is 422 or 200 on the row that won. |
 
 `POST /api/v1/user/social` `{ username, token }` → `200` `{}` and `Set-Cookie`
 
@@ -169,12 +169,12 @@ sequenceDiagram
 
 **Delivers** the screens that start the provider and collect a username. This repo does not contain them. **Status: clear.**
 
-| State                         | What should happen                                                                                          | Caller sees                                      |
-| ----------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| Logged-out login screen       | Two controls. Each is a full navigation to `GET /api/v1/session/login/google` or `GET /api/v1/session/login/microsoft`. | The browser leaves for the provider              |
-| `WEBAPP_URL/register/username?token=` | One username field. Submit sends `POST /api/v1/user/social`. A 422 stays on this screen and keeps the token. | After 200, the same landing as a password login  |
-| `WEBAPP_URL/login` after a refusal | The login screen again. No session.                                                                        | The person can try a provider or the password    |
-| `WEBAPP_URL` after a cookie   | The app calls `GET /api/v1/user` the way it does after password login.                                      | `permission` includes `create:session:own`       |
+| State                                 | What should happen                                                                                                      | Caller sees                                     |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| Logged-out login screen               | Two controls. Each is a full navigation to `GET /api/v1/session/login/google` or `GET /api/v1/session/login/microsoft`. | The browser leaves for the provider             |
+| `WEBAPP_URL/register/username?token=` | One username field. Submit sends `POST /api/v1/user/social`. A 422 stays on this screen and keeps the token.            | After 200, the same landing as a password login |
+| `WEBAPP_URL/login` after a refusal    | The login screen again. No session.                                                                                     | The person can try a provider or the password   |
+| `WEBAPP_URL` after a cookie           | The app calls `GET /api/v1/user` the way it does after password login.                                                  | `permission` includes `create:session:own`      |
 
 ## Sources
 

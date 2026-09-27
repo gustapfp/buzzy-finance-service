@@ -20,30 +20,30 @@ A new account has `permission` `[]` until the activation link is used. After tha
 
 ## Account
 
-| When | Response | What changes |
-| --- | --- | --- |
-| Login before the link is used | `401`, no `Set-Cookie` | No session |
-| The same activation token after the account is already activated | `200` `{ message: "User activated successfully" }` | `permission` unchanged |
-| Expired token, token that is not a verification JWT, or missing `token` | `404` `{ name: "not_found_error", message: "Activation token not found or expired", action: "Please request a new activation token.", status_code: 404 }` | `permission` unchanged |
-| `POST /api/v1/user/activate` `{ email }` for an unactivated account | `200` `{ message: "If an unactivated account exists for that email, a new link was sent." }` | A new email is sent. The previous token still activates |
-| That resend for an unknown email, or for an account that already has `create:session:own` | The same `200` | No email. `permission` unchanged |
-| Username or email already stored, compared case-insensitively | `422` `{ name: "validation_error", message: "These fields are not valid: <fields>", action: "Fix the provided fields and try again.", status_code: 422 }` | No new `users` row. No email. `<fields>` is `email`, `username`, or `email,username` |
+| When                                                                                      | Response                                                                                                                                                  | What changes                                                                         |
+| ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Login before the link is used                                                             | `401`, no `Set-Cookie`                                                                                                                                    | No session                                                                           |
+| The same activation token after the account is already activated                          | `200` `{ message: "User activated successfully" }`                                                                                                        | `permission` unchanged                                                               |
+| Expired token, token that is not a verification JWT, or missing `token`                   | `404` `{ name: "not_found_error", message: "Activation token not found or expired", action: "Please request a new activation token.", status_code: 404 }` | `permission` unchanged                                                               |
+| `POST /api/v1/user/activate` `{ email }` for an unactivated account                       | `200` `{ message: "If an unactivated account exists for that email, a new link was sent." }`                                                              | A new email is sent. The previous token still activates                              |
+| That resend for an unknown email, or for an account that already has `create:session:own` | The same `200`                                                                                                                                            | No email. `permission` unchanged                                                     |
+| Username or email already stored, compared case-insensitively                             | `422` `{ name: "validation_error", message: "These fields are not valid: <fields>", action: "Fix the provided fields and try again.", status_code: 422 }` | No new `users` row. No email. `<fields>` is `email`, `username`, or `email,username` |
 
 ## Session
 
-| When | Response | What changes |
-| --- | --- | --- |
-| Password does not match | `401`, no `Set-Cookie` | No session |
-| A fourth login while three sessions are live | `200` and `Set-Cookie` | The oldest cookie still receives `200` from `GET /api/v1/user` |
-| No cookie, an unknown cookie, or a session past `expires_at` | `401` | The caller is not treated as that user |
-| The `users` row for a live session has been deleted | `401` | That cookie is dead |
-| `User-Agent` differs from login, or the header is absent | `200` on `GET /api/v1/user` | The agent is not compared |
-| `DELETE /api/v1/session/logout` with a live cookie | `200`. `Set-Cookie` sets `better-auth.session_token` with `Max-Age=0` | That session ends. A different session still receives `200` |
-| Logout without a live cookie | `401` | No session is deleted |
-| `PUT /api/v1/user/:username` `{ password }` with a live cookie | `200` `{ username, email, updated_at }` | Login works with the new password and fails with the old one. The cookie that sent the change stays valid. Other sessions for that user become `401` |
-| `PUT /api/v1/user/:username` `{ username }` or `{ email }`, no password | `200` `{ username, email, updated_at }` | No email. Every session that existed before the call still receives `200` |
-| `GET /api/v1/user/:username` without a live cookie | `401` | |
-| `GET /api/v1/user/:username` with a live cookie | `200` `{ username, email, permission, created_at, updated_at }` | The body has no `password` |
+| When                                                                    | Response                                                              | What changes                                                                                                                                         |
+| ----------------------------------------------------------------------- | --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Password does not match                                                 | `401`, no `Set-Cookie`                                                | No session                                                                                                                                           |
+| A fourth login while three sessions are live                            | `200` and `Set-Cookie`                                                | The oldest cookie still receives `200` from `GET /api/v1/user`                                                                                       |
+| No cookie, an unknown cookie, or a session past `expires_at`            | `401`                                                                 | The caller is not treated as that user                                                                                                               |
+| The `users` row for a live session has been deleted                     | `401`                                                                 | That cookie is dead                                                                                                                                  |
+| `User-Agent` differs from login, or the header is absent                | `200` on `GET /api/v1/user`                                           | The agent is not compared                                                                                                                            |
+| `DELETE /api/v1/session/logout` with a live cookie                      | `200`. `Set-Cookie` sets `better-auth.session_token` with `Max-Age=0` | That session ends. A different session still receives `200`                                                                                          |
+| Logout without a live cookie                                            | `401`                                                                 | No session is deleted                                                                                                                                |
+| `PUT /api/v1/user/:username` `{ password }` with a live cookie          | `200` `{ username, email, updated_at }`                               | Login works with the new password and fails with the old one. The cookie that sent the change stays valid. Other sessions for that user become `401` |
+| `PUT /api/v1/user/:username` `{ username }` or `{ email }`, no password | `200` `{ username, email, updated_at }`                               | No email. Every session that existed before the call still receives `200`                                                                            |
+| `GET /api/v1/user/:username` without a live cookie                      | `401`                                                                 |                                                                                                                                                      |
+| `GET /api/v1/user/:username` with a live cookie                         | `200` `{ username, email, permission, created_at, updated_at }`       | The body has no `password`                                                                                                                           |
 
 The `401` body is `{ name: "unauthorized", message: "User Unauthorized to do this operation.", action: "Please try to login again or if you're facing any issue contact the support team.", status_code: 401 }`.
 
