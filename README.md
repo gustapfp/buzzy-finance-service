@@ -10,16 +10,16 @@
 
 ## Commands
 
-| Task                                  | Command                                             |
-| ------------------------------------- | --------------------------------------------------- |
-| Run dev API                           | `pnpm dev`                                          |
-| Run the full e2e suite                | `pnpm test`                                         |
-| Watch tests                           | `pnpm watch`                                        |
-| Type-check / build                    | `pnpm build`                                        |
-| Lint                                  | `pnpm lint:eslint:check`                            |
-| Format / check format                 | `pnpm lint:prettier` / `pnpm lint:prettier:check`   |
-| New migration                         | `pnpm migrate:create <name>`                        |
-| Apply / revert migrations             | `pnpm migrate:up` / `pnpm migrate:down`             |
-| Docker services                       | `pnpm compose:up` / `compose:stop` / `compose:down` |
+| Task                      | Command                                             |
+| ------------------------- | --------------------------------------------------- |
+| Run dev API               | `pnpm dev`                                          |
+| Run the full e2e suite    | `pnpm test`                                         |
+| Watch tests               | `pnpm watch`                                        |
+| Type-check / build        | `pnpm build`                                        |
+| Lint                      | `pnpm lint:eslint:check`                            |
+| Format / check format     | `pnpm lint:prettier` / `pnpm lint:prettier:check`   |
+| New migration             | `pnpm migrate:create <name>`                        |
+| Apply / revert migrations | `pnpm migrate:up` / `pnpm migrate:down`             |
+| Docker services           | `pnpm compose:up` / `compose:stop` / `compose:down` |
 
 `pnpm test` boots Docker, starts the API with `.env.development`, and runs Jest with `--runInBand`. It needs Docker running. A test run clears the development database.
