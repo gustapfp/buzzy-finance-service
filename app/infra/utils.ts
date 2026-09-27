@@ -12,7 +12,6 @@ export const getDBName = (nodeEnv: string): string => {
     production: "",
     staging: "",
     local: "buzzy_finance_db_local",
-    test: "buzzy_finance_db_test",
   };
   return environment[nodeEnv as keyof typeof environment];
 };

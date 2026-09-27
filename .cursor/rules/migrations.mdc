@@ -1,0 +1,23 @@
+---
+description: Postgres migration style for the finance backend
+globs: backend/app/infra/migrations/**/*.ts
+alwaysApply: false
+---
+
+# Migrations
+
+Create migrations with `pnpm migrate:create <name>`. Never rename or edit a migration that has already been applied or committed. Add a new one.
+
+Use `timestamptz` columns, `gen_random_uuid()` defaults, and `created_at` / `updated_at` defaulting to `timezone('utc', now())`.
+
+Every migration sets `export const down = false`. There are no rollbacks. To undo or change a schema, add a new forward migration. Do not write a `down` function.
+
+```typescript
+created_at: {
+  default: pgm.func("timezone('utc', now())"),
+  type: "timestamptz",
+  notNull: true,
+},
+```
+
+A schema change needs a matching e2e test under `backend/app/tests/v1/api/`.

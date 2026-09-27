@@ -3,6 +3,7 @@ import type { Express } from "express";
 import { PORT } from "./config/consts";
 import { logger } from "./utils/logger";
 import V1Router from "./v1";
+import cookieParser from "cookie-parser";
 
 const app: Express = express();
 
@@ -10,13 +11,16 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
   logger.info({ method: req.method, path: req.path }, "incoming request");
   next();
 });
+app.use(cookieParser());
 
 app.use((req: Request, _res: Response, next: NextFunction) => {
   logger.info(`${req.method} ${req.url}`);
   next();
 });
 
-app.use(`/api`, V1Router);
+app.use(express.json());
+
+app.use(`/api/v1`, V1Router);
 
 app.use((_req: Request, res: Response) => {
   res.status(404).json({ message: "Not found" });

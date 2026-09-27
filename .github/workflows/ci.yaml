@@ -14,11 +14,11 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
 
       - run: pnpm install --frozen-lockfile
-      - name: Create .env.test
-        run: echo "${{ secrets.TEST_ENV }}" > .env.test
       - name: Build
         run: pnpm build
       - name: Integration tests
+        env:
+          NODE_OPTIONS: --dns-result-order=ipv4first
         run: pnpm test
       - name: Prettier check
         run: pnpm lint:prettier:check
