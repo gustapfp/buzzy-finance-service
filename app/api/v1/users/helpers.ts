@@ -1,4 +1,6 @@
 import { DB } from "infra/database/database";
+import { BaseError } from "infra/errors/BaseError";
+import { NotFoundError } from "infra/errors/NotFoundError";
 import { ValidationError } from "infra/errors/ValidationError";
 
 const thisEmailAlreadyExits = async (email: string): Promise<boolean> => {
@@ -48,4 +50,20 @@ export const passwordLengthIsValid = (password: string) => {
   if (password.length < 8 || password.length > 128) {
     throw new ValidationError(null, ["password"]);
   }
+};
+
+export const activationNotFound = (cause: unknown) =>
+  new NotFoundError(cause, "Activation token not found or expired", "Please request a new activation token.");
+
+export const isRejectedActivation = (err: unknown) => {
+  if (err instanceof BaseError) {
+    return err.status_code < 500;
+  }
+  if (typeof err === "object" && err && "status" in err) {
+    const status = Number((err as { status: unknown }).status);
+    if (Number.isFinite(status)) {
+      return status < 500;
+    }
+  }
+  return true;
 };

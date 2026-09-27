@@ -12,8 +12,7 @@ import type {
 import type { Request, Response } from "express";
 import sessionModel from "../session/model";
 import { getAuth, toAuthHeaders } from "api/utils/auth";
-import { NotFoundError } from "infra/errors/NotFoundError";
-import { BaseError } from "infra/errors/BaseError";
+import { activationNotFound, isRejectedActivation } from "./helpers";
 
 export const getOneUserByUsernameController = async (
   request: UserGetByUsernameRequest,
@@ -54,22 +53,6 @@ export const getCurrentUserController = async (request: Request, response: UserG
   } catch (err) {
     return handleUnexpectedError(err, response);
   }
-};
-
-const activationNotFound = (cause: unknown) =>
-  new NotFoundError(cause, "Activation token not found or expired", "Please request a new activation token.");
-
-const isRejectedActivation = (err: unknown) => {
-  if (err instanceof BaseError) {
-    return err.status_code < 500;
-  }
-  if (typeof err === "object" && err && "status" in err) {
-    const status = Number((err as { status: unknown }).status);
-    if (Number.isFinite(status)) {
-      return status < 500;
-    }
-  }
-  return true;
 };
 
 export const activateUserController = async (request: Request, response: Response) => {
