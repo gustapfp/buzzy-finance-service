@@ -1,0 +1,30 @@
+---
+description: API layering, controller error handling, and feature types for backend endpoints
+globs: backend/app/api/**/*.ts
+alwaysApply: false
+---
+
+# API layering
+
+A feature lives in `backend/app/api/v1/<feature>/` with `route.ts`, `controller.ts`, `model.ts`, `types.ts`, and SQL in `consts.ts`, then mounts in `backend/app/api/v1/index.ts`.
+
+`route` wires paths. `controller` handles HTTP. `model` owns SQL and business rules. Controllers never write SQL. Models never touch `Request` or `Response`.
+
+Every controller wraps its body in `try/catch` and returns `handleUnexpectedError(err, response)`. Every `.route()` chain ends with `.all(catchNotAllowedMethods)`.
+
+```typescript
+usersRouter.route("/user").get(getCurrentUserController).post(createUserController).all(catchNotAllowedMethods);
+
+export const createUserController = async (request: UserCreateRequest, response: UserCreateResponse) => {
+  try {
+    const newUser = await userModel.createUser(request.body);
+    return response.status(201).json(newUser);
+  } catch (err) {
+    return handleUnexpectedError(err, response);
+  }
+};
+```
+
+All `Request` / `Response` aliases, `*RequestBody` / `*ResponseBody`, entities, and param types live in that feature's `types.ts`. Do not declare an inline type in `route.ts`, `controller.ts`, `model.ts`, or `helpers.ts`.
+
+Models export a default object of functions (see `userModel`). Dates cross the wire as ISO strings (`.toISOString()`). Build the response explicitly. Do not spread a DB row into JSON. `password` and `id` must not leak.

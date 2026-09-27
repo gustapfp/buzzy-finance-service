@@ -16,4 +16,4 @@ export interface BaseErrorOptions extends ErrorOptions {
   status_code: number;
 }
 
-export type ServiceName = "Database" | "ExpressAPI" | "NextJsUI";
+export type ServiceName = "Database" | "ExpressAPI" | "NextJsUI" | "SMTPMailer";

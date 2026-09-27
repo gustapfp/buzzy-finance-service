@@ -1,0 +1,17 @@
+---
+description: e2e test shape and failure handling for the finance backend
+globs: backend/app/tests/**/*.ts
+alwaysApply: false
+---
+
+# Tests
+
+Jest only matches `backend/app/tests/v1/api/**/*.test.ts`. A test anywhere else does not run.
+
+Hit the real API with `fetch`. Use helpers in `backend/app/tests/v1/api/utils.ts` (`createUser`, `loginUser`, `activateUser`, `applyMigrations`, `cleanDatabase`, `extractSessionCookie`, `getLastEmail`). Add new helpers there.
+
+Standard shape: `beforeAll(waitForServices)`, then per test `cleanDatabase(client)` and `applyMigrations()`. Tests share one database and run `--runInBand`, so reset state instead of relying on order.
+
+Assert status code and body shape, including fields that must be absent (`not.toHaveProperty("password")`). Email flows go through MailCatcher (`getLastEmail`, `deleteAllEmails`).
+
+A failing test is a stop. Do not change the code or the test to make it pass. Report which test failed, the assertion, what you believe caused it, and whether the bug is in the code or the expectation, then ask which one should change. Do not delete, skip, `.only`, loosen an assertion, or raise a timeout to get a green run.

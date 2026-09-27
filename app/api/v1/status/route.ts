@@ -1,5 +1,5 @@
 import { Router } from "express";
-import healthCheckController from "./statusController";
+import healthCheckController from "./controller";
 import { catchNotAllowedMethods } from "../utils";
 
 const statusRouter: Router = Router();
