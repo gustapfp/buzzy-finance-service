@@ -29,4 +29,4 @@ A person signs in with Google or Microsoft and receives the same session cookie 
 
 ### This API
 
-Specified in [social-login.md](M2I29/social-login.md). Not repeated here.
+Specified in [social-login.md](M2I37/social-login.md). Not repeated here.

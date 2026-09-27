@@ -50,5 +50,3 @@ The `401` body is `{ name: "unauthorized", message: "User Unauthorized to do thi
 ## Still open
 
 `SameSite` on `better-auth.session_token` is not decided. The cookie is sent as `Strict` until that is confirmed. The login check does not assert `SameSite`.
-
-`BETTER_AUTH_SECRET` must be at least 32 characters in `.env.development`, `.env.prod`, and the CI `TEST_ENV` secret before this can run outside the test environment. `baseURL` is the existing `BASE_URL`. Do not add `BETTER_AUTH_URL`.

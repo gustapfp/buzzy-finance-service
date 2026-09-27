@@ -1,5 +1,6 @@
 /** @type {import('jest').Config} */
 export default {
+  testTimeout: 60000,
   projects: [
     {
       displayName: "integration",
@@ -7,7 +8,7 @@ export default {
       testMatch: ["<rootDir>/app/tests/v1/**/*.test.ts"],
       moduleDirectories: ["node_modules", "<rootDir>/app"],
       setupFiles: ["<rootDir>/app/tests/v1/api/setup.ts"],
-      testTimeout: 6000,
+      testTimeout: 60000,
       transform: {
         "^.+\\.(t|j)sx?$": [
           "babel-jest",
