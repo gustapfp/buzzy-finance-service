@@ -10,17 +10,17 @@
 
 ## Commands
 
-| Task                                  | Command                                           |
-| ------------------------------------- | ------------------------------------------------- |
-| Run dev API (dev env)                 | `pnpm dev`                                        |
-| Run dev API against test env          | `pnpm dev:test`                                   |
-| Run the full e2e suite                | `pnpm test`                                       |
-| Watch tests (server must already run) | `pnpm watch`                                      |
-| Type-check / build                    | `pnpm build`                                      |
-| Lint                                  | `pnpm lint:eslint:check`                          |
-| Format / check format                 | `pnpm lint:prettier` / `pnpm lint:prettier:check` |
-| New migration                         | `pnpm migrate:create <name>`                      |
-| Apply / revert migrations             | `pnpm migrate:up` / `pnpm migrate:down`           |
+| Task                                  | Command                                             |
+| ------------------------------------- | --------------------------------------------------- |
+| Run dev API (dev env)                 | `pnpm dev`                                          |
+| Run dev API against test env          | `pnpm dev:test`                                     |
+| Run the full e2e suite                | `pnpm test`                                         |
+| Watch tests (server must already run) | `pnpm watch`                                        |
+| Type-check / build                    | `pnpm build`                                        |
+| Lint                                  | `pnpm lint:eslint:check`                            |
+| Format / check format                 | `pnpm lint:prettier` / `pnpm lint:prettier:check`   |
+| New migration                         | `pnpm migrate:create <name>`                        |
+| Apply / revert migrations             | `pnpm migrate:up` / `pnpm migrate:down`             |
 | Docker services                       | `pnpm compose:up` / `compose:stop` / `compose:down` |
 
 `pnpm test` boots Docker, starts the API with `.env.test`, and runs Jest with `--runInBand`. It needs Docker running.

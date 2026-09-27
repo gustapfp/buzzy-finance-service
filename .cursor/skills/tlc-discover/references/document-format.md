@@ -69,8 +69,8 @@ Unchanged: <existing identifiers a reader might expect to change and that do not
 
 ## Work
 
-| Slice | Delivers | Status |
-|---|---|---|
+| Slice                | Delivers                                | Status                                                       |
+| -------------------- | --------------------------------------- | ------------------------------------------------------------ |
 | [<Slice>](#<anchor>) | <what exists when it is done, one line> | clear \| open — <n> defaults taken \| rfc \| spike \| design |
 
 Order: <slice → slice → slice>.
@@ -83,8 +83,8 @@ Derivable from the repository, left to the plan: <convention>, <convention> - <"
 
 **Delivers** <one sentence>. **Status: <clear | open | rfc | spike | design>.** <One clause if it is the door.>
 
-| State | What should happen | Caller sees |
-|---|---|---|
+| State                                   | What should happen                                       | Caller sees                                                  |
+| --------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------ |
 | <each journey state this slice answers> | <the product outcome: what is saved, refused, unchanged> | <code, and the reason string where the string is a decision> |
 
 <Third column omitted for a slice with no caller. A slice whose states are all one kind - parent deletes - collapses to two columns.>
@@ -96,8 +96,8 @@ Derivable from the repository, left to the plan: <convention>, <convention> - <"
 
 Table `<name>`; <no existing table changes | <table>: <before → after>>.
 
-| Column | Type | Null | References | Note |
-|---|---|---|---|---|
+| Column     | Type   | Null      | References       | Note                                |
+| ---------- | ------ | --------- | ---------------- | ----------------------------------- |
 | `<column>` | <type> | yes \| no | `<table.column>` | <enum values, index, who writes it> |
 
 <Entity diagram when the slice relates more than one record, checked against the code.>
@@ -132,9 +132,11 @@ sequenceDiagram
 Alternatives considered: <option> - wins if <condition>. <One line, only for alternatives a reader might reasonably raise. Costly alternatives are already in Key decisions.>
 
 <Open, default taken - numbered, only in a slice whose status is open:>
+
 1. <question> - <default>
 
 <RFC / spike / design - only in a slice whose status says so:>
+
 - RFC: <question> - <what it blocks>. Not decided.
 - Spike: <question only building answers> - <what each answer changes> - <when it stops>
 - Design: <screen or flow> - <the states the drawing has to answer for>

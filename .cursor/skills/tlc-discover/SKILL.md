@@ -17,7 +17,7 @@ SITUATION ────→ PROBLEM ───────→ VERDICT ────�
  project is)     proposed yet)    record)          against this repo)
 ```
 
-**These are not a script, they are the prerequisite order.** What you run is an interview: ask whatever is answerable given what is settled, and stop when nothing answerable is left. The order falls out on its own, because *how* has *whether* as a prerequisite and *whether* has *where we are*. Marching them as four acts is how a discovery asks a project that never shipped what its problem costs today.
+**These are not a script, they are the prerequisite order.** What you run is an interview: ask whatever is answerable given what is settled, and stop when nothing answerable is left. The order falls out on its own, because _how_ has _whether_ as a prerequisite and _whether_ has _where we are_. Marching them as four acts is how a discovery asks a project that never shipped what its problem costs today.
 
 The failure that matters here is not inventing a fact, it is **converging early**: proposing a solution on turn two, hearing "sure", and manufacturing a decision that has all the authority of one and none of the examination. Everything below exists to make that harder.
 
@@ -25,7 +25,7 @@ The artifact is a design document that anyone - a person, a team, a planning too
 
 ## Critical rules
 
-1. **No technology is *proposed* before the verdict.** Not a library, not a provider, not a pattern. If the problem section argues for one, the framing is already a solution. This bans proposing, never knowing: what the project already runs, already committed to and already has half-written is a constraint, and meeting it late is how a discovery reopens what the team closed last month.
+1. **No technology is _proposed_ before the verdict.** Not a library, not a provider, not a pattern. If the problem section argues for one, the framing is already a solution. This bans proposing, never knowing: what the project already runs, already committed to and already has half-written is a constraint, and meeting it late is how a discovery reopens what the team closed last month.
 2. **The verdict is a stop wherever the decision is open.** Present it and wait. Where Situation established that somebody already committed, it is a line on the record instead of a gate - manufacturing a gate whose answer you know is the approval theatre that teaches everyone to click through the one that mattered.
 3. **Never present an option you would not ship.** Two shapes are considered every time; the second earns a section only when it is live. When it is not, it earns one sentence naming what would have to be true for it to win - which is the disqualifying property whoever plans this needs anyway.
 4. **Name the number that would change the decision before you go and get it.** Data with no question attached is noise that costs context. And a **missing number is not a finding about the problem** - it is usually a finding about the instrumentation. Ask; never read size out of silence.
@@ -63,7 +63,7 @@ Work in flight changes the answer and not merely the background. A capability ha
 
 Record them in a line each, so a reader six weeks out can tell the problem section is thin because nothing had shipped rather than because nobody thought of it. In flight is one sentence for what this copies as precedent and one for what stays out - it is where commit hashes and method names leak into the document first, and neither belongs.
 
-**Some work does not need a discovery at all, and saying so is part of the job.** Where little is at stake, the answer is reversible in an afternoon and nobody in the room disagrees, give the recommendation in a paragraph and stop: no document, no verdict, no sections. A discovery that cannot decline the *feature* is a rubber stamp, and one that cannot decline *itself* is paperwork people learn to route around - which is how it stops being run on the decision that needed it. The bar is all three at once: cheap to reverse, small blast radius, nobody disagreeing. Any one of them missing and the session runs.
+**Some work does not need a discovery at all, and saying so is part of the job.** Where little is at stake, the answer is reversible in an afternoon and nobody in the room disagrees, give the recommendation in a paragraph and stop: no document, no verdict, no sections. A discovery that cannot decline the _feature_ is a rubber stamp, and one that cannot decline _itself_ is paperwork people learn to route around - which is how it stops being run on the decision that needed it. The bar is all three at once: cheap to reverse, small blast radius, nobody disagreeing. Any one of them missing and the session runs.
 
 ## Problem
 
@@ -91,7 +91,7 @@ Before fetching anything, say which number would change the decision. Then go ge
 
 What is available differs per project, so probe rather than assume. Product analytics, error tracking, logs, the issue tracker, support volume - use whatever the environment actually exposes, and never build a dependency on one of them being there. The floor is the repository itself, which is always present.
 
-**A missing number is not evidence of anything.** Two opposite cases hide behind it: *we measured and it is small* is a finding about the problem, *nobody ever instrumented this* is a finding about the instrumentation. Something untracked happens exactly as often as it happens, and collapsing the two is how an untracked problem gets read as a small one.
+**A missing number is not evidence of anything.** Two opposite cases hide behind it: _we measured and it is small_ is a finding about the problem, _nobody ever instrumented this_ is a finding about the instrumentation. Something untracked happens exactly as often as it happens, and collapsing the two is how an untracked problem gets read as a small one.
 
 So when the number is missing, **ask - never infer**. The people in the room know from support, from sales, from their own week, and that beats a silent assumption in either direction. Record what nobody can measure and what they told you instead, each marked as what it is. Making it measurable is sometimes the right first move and never the automatic one - and for a capability that does not exist there is nothing there to instrument.
 
@@ -105,7 +105,7 @@ It follows the evidence because a number changes which states are worth the trou
 
 Every real sequence has more states than the happy one anybody describes. Empty, first time, the retry, the half-finished, the expired, the unauthorised, the one where the user walks away and comes back tomorrow. Go and find them, put them to the user as concrete questions, and record what they decide.
 
-These are **product** edge cases: what *should* happen. The engineering cross-cutting concerns - concurrency, idempotency, authorization, observability - are not asked here; they are decided later, against the code, and only the ones that are hard to reverse - those become Key decisions; the rest are the plan's. The line is clean: if answering it needs a product opinion, it is asked here; if it needs the repository, it waits.
+These are **product** edge cases: what _should_ happen. The engineering cross-cutting concerns - concurrency, idempotency, authorization, observability - are not asked here; they are decided later, against the code, and only the ones that are hard to reverse - those become Key decisions; the rest are the plan's. The line is clean: if answering it needs a product opinion, it is asked here; if it needs the repository, it waits.
 
 **The journey has no section in the document.** It is asked here, as product, before the verdict - and each confirmed state then lands in the slice that answers it, in that slice's state table, next to what the caller sees. A journey kept whole at the top of the document and a contract kept whole inside each slice are the same facts in two voices, and a planner reconciles them by hand. A state no slice touches is one line under the Work index naming the existing code that handles it.
 
@@ -119,9 +119,9 @@ Widen the solution space once, here, before the verdict. The phase above recover
 
 So ask what would remove the cost you just measured without building the thing that was proposed. Changing a default. Removing the step instead of supporting it. Wording that stops the confusion upstream. Doing it by hand for the first ten cases, which is usually how you find out what to build. Solving the half that carries most of the cost and leaving the rest. Buying it.
 
-**Buying is the one needing a look outside**, and a bounded one: whether a product for this exists at all, and roughly what it costs against the weeks it replaces. Not a vendor survey, and not a breach of rule 1 - noting a category of product exists is not proposing a pattern. How anyone *shapes* this waits for Prior art.
+**Buying is the one needing a look outside**, and a bounded one: whether a product for this exists at all, and roughly what it costs against the weeks it replaces. Not a vendor survey, and not a breach of rule 1 - noting a category of product exists is not proposing a pattern. How anyone _shapes_ this waits for Prior art.
 
-Most get discarded in a line, and that is the point - considered where the user can see them, so the expensive path becomes a choice instead of a default. When one survives it is the highest-return moment in the discovery. And it happens here or nowhere: after the verdict the work is committed to shape and cost, and nobody reopens *what* to build while comparing *how*.
+Most get discarded in a line, and that is the point - considered where the user can see them, so the expensive path becomes a choice instead of a default. When one survives it is the highest-return moment in the discovery. And it happens here or nowhere: after the verdict the work is committed to shape and cost, and nobody reopens _what_ to build while comparing _how_.
 
 ## Verdict
 
@@ -157,7 +157,7 @@ If the verdict is **not now** or **do not build**, the document is Status `decli
 
 ## Decide
 
-Now open the repository, and open it **before** proposing anything and before reading anything outside. An option is not a design, it is a design plus what it costs *here*, and the same choice is obvious in one codebase and absurd in another. Proposing first and checking later means defending a position instead of forming one; reading a benchmark first means reading your own codebase through somebody else's lens.
+Now open the repository, and open it **before** proposing anything and before reading anything outside. An option is not a design, it is a design plus what it costs _here_, and the same choice is obvious in one codebase and absurd in another. Proposing first and checking later means defending a position instead of forming one; reading a benchmark first means reading your own codebase through somebody else's lens.
 
 ### What the repository tells you
 
@@ -173,7 +173,7 @@ Somebody has solved a version of this before, and reading how is cheap next to d
 
 Three things are worth carrying back. **The shape that repeats** across independent teams, because convergence is evidence - the same seam everywhere is usually load-bearing rather than fashionable. **The failure everybody reports**, the cheapest item in this skill: an edge case avoided by reading instead of by shipping. And **what turned out to be unnecessary**, which you only get from teams describing what they removed.
 
-**What never transfers is scale, and that is how this section does harm.** A design published by a company with a thousand times your traffic describes *their* constraints faithfully, and adopting it imports a bill for a problem you do not have. Where a benchmark argues for something heavier, say which of their conditions you share; sharing none, it is interesting and irrelevant, and saying so is the finding. Read the constraint behind the design, never the design.
+**What never transfers is scale, and that is how this section does harm.** A design published by a company with a thousand times your traffic describes _their_ constraints faithfully, and adopting it imports a bill for a problem you do not have. Where a benchmark argues for something heavier, say which of their conditions you share; sharing none, it is interesting and irrelevant, and saying so is the finding. Read the constraint behind the design, never the design.
 
 Where nothing comparable exists, that is a result too: the problem is unusual, or the framing is off and nobody names it that way. The second is worth going back for.
 
@@ -197,7 +197,7 @@ Give each one the condition under which it wins. That is what lets someone disag
 
 When the second shape is not genuinely live, do not build it a section. One sentence - "the heavier version only pays off if we expect N, and we do not" - carries the whole comparison and hands the planner the rejected alternative with the property that killed it.
 
-**Shape is four sentences at most**: what the record is, what the operation does, what the door is and what it costs to change, and the heavier alternative with its condition. It does not say which layers it follows - the repository's rules already do, and restating them is the harness leaking into the document; it earns a sentence only where the design *departs* from them. It does not name precedents - Situation › In flight already did. If Shape names a method it is implementation; if it restates a Key decision it is repetition.
+**Shape is four sentences at most**: what the record is, what the operation does, what the door is and what it costs to change, and the heavier alternative with its condition. It does not say which layers it follows - the repository's rules already do, and restating them is the harness leaking into the document; it earns a sentence only where the design _departs_ from them. It does not name precedents - Situation › In flight already did. If Shape names a method it is implementation; if it restates a Key decision it is repetition.
 
 ### What the document holds
 
@@ -235,16 +235,16 @@ Every diagram is checked against the repository before it lands. A sequence that
 
 **Invariant, not mechanism.** "One Payment per Invoice, and a lost race leaves no orphan Payment" is a decision - it is a product consequence, and a planner reading only the unique index would not arrive at the atomicity it needs. "Conditional `UPDATE ... WHERE status = 'open'`, zero rows means roll back" is a mechanism - one of several that satisfy the invariant, and naming it forecloses the others while putting SQL in a document that forbids method names. The design states the invariant and, where the obvious precedent would violate it, says so - "Refund writes its status and its ledger entry separately; do not copy it here" is the sentence a planner cannot derive and would otherwise get wrong. The test: would a competent planner, reading only the invariant, arrive here on their own - and at the same place? If yes, it is theirs. If the precedent points the wrong way, the warning is yours.
 
-**Code appears almost nowhere.** A full ORM table, a service method, a route handler, a SQL predicate are all what the builder writes from the column table, the flow and the contract; putting them in the design makes the document the thing that drifts from the code instead of the thing the code is checked against. The rare exception is a literal that *is* the product decision - an enum value, a path, a response shape - and those already live in the state table, the contract and the schema.
+**Code appears almost nowhere.** A full ORM table, a service method, a route handler, a SQL predicate are all what the builder writes from the column table, the flow and the contract; putting them in the design makes the document the thing that drifts from the code instead of the thing the code is checked against. The rare exception is a literal that _is_ the product decision - an enum value, a path, a response shape - and those already live in the state table, the contract and the schema.
 
 ### When to stop deciding
 
 Two axes settle every remaining question, and the grid is the stopping rule - you are done when every question sits in one of the four, not when you run out of energy.
 
-| | Clear | Unclear |
-|---|---|---|
+|                 | Clear                                                                 | Unclear                                                                       |
+| --------------- | --------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
 | **High impact** | Decide it. Record the shape, the alternative, and what would flip it. | **Do not decide.** It needs an RFC, or a spike when only building answers it. |
-| **Low impact** | One line. | Take a sensible default, note it, and decide while building. |
+| **Low impact**  | One line.                                                             | Take a sensible default, note it, and decide while building.                  |
 
 The top-right cell is the one that gets violated, because deciding feels like progress. A consequential choice nobody can see clearly is exactly the one not to settle in a conversation, and sending it to an RFC is the discovery working rather than failing.
 
@@ -274,22 +274,24 @@ Produce the artifact - unless Situation concluded there is nothing here to disco
 
 User says: "Should we add a cache for the dashboard?"
 Actions:
+
 1. Look up situation (shipped product, what is in flight). Ask only what the repo cannot settle.
 2. Recover the problem from "we need a cache" — who hurts, what it costs today, what happens if nothing changes.
 3. Name the number that would change the decision, then fetch that one.
 4. Walk the journey states that matter. Present cheaper-than-building paths.
 5. Stop at a verdict and wait.
 6. After confirmation, read the repository, then two shapes, then cut the slices and fill each with its diff, flow, schema, contract and decisions. Write `.design/<name>.md` from `references/document-format.md`.
-Result: a design document with Status in the header, Situation, Problem, Success, Boundary, Shape, Key decisions, and Work — an index of slices with status, then one section per slice, each with its state table — or a `declined` document that stops after Boundary.
+   Result: a design document with Status in the header, Situation, Problem, Success, Boundary, Shape, Key decisions, and Work — an index of slices with status, then one section per slice, each with its state table — or a `declined` document that stops after Boundary.
 
 ### Example 2: Already committed
 
 User says: "We already decided to build billing. Help me figure out the shape."
 Actions:
+
 1. Record the committed decision in Situation. Do not restage the verdict.
 2. Interview journey states and evidence that still affect shape.
 3. Open the repository before proposing. Two shapes, costed here. Design with the critical-path flow, the state machine and the schema. Write `.design/<name>.md`.
-Result: Verdict line is "already committed — see Situation". Shape, Key decisions and every slice are filled. Anyone can plan from it without the conversation.
+   Result: Verdict line is "already committed — see Situation". Shape, Key decisions and every slice are filled. Anyone can plan from it without the conversation.
 
 ### Example 3: Wrong skill
 
@@ -300,34 +302,41 @@ Result: hand off; no `.design/` file from this skill.
 ## Common failures
 
 ### Converging on turn two
+
 Cause: a solution was proposed before the verdict, the user said "sure", and that was treated as a decision.
 Solution: stop. Recover the problem. If the decision was already committed, record it and skip the gate — do not manufacture a second one.
 
 ### Empty case for a new capability
+
 Cause: pain questions ("what breaks if we do nothing") were run on an absence or construction problem.
 Solution: switch kinds. Absence: what they do instead. Construction: what stalls, and why now rather than after the next piece. A missing number is not evidence the problem is small.
 
 ### Description or template placeholders leaking into the artifact
+
 Cause: the Format template was copied with the angle-bracket hints still in it.
 Solution: replace every placeholder with a concrete value, or omit the section. A heading with "N/A" under it does not appear.
 
 ### A spec wearing a design's clothes
+
 Cause: one Decisions table grew to thirty rows of error copy, trimming and sort order, and the transaction that actually decides the design is one cell among them. No flow, no state machine, the schema in one line.
 Solution: pull the hard-to-reverse decisions into Key decisions as prose, draw the critical path inside the slice that owns it, write the schema as a column table. Drop the derivable literals - a planner gets them from the convention the repository already holds, and cite that convention once under the index.
 
 ### Organised by view instead of by slice
+
 Cause: every flow under Flows, every table under Schema, every endpoint under Contract, every choice in one Decisions table, every open question at the end. Each section is tidy and the reader who wants to understand one piece of the work visits five of them.
 Solution: cut the slices first. Each one carries its own state table, flow, schema, contract and open questions. The only things above the slices are the bet, the key decisions, and an index with one status per slice.
 
 ### Ten decisions said eighty times
+
 Cause: the transaction appears in Situation, Prior art, Shape twice, two Key decisions, the slice's Delivers, its state table, its diagram, a paragraph after the diagram, a cross-cutting line, a decisions row and a schema note. Every section was "earned by having content", and the transaction has content everywhere.
 Solution: each decision once, at the highest level that owns it. Key decisions holds it; the slice says "Key decision 2"; the diagram shows it; nothing else mentions it. Then remove the per-slice decisions table, the cross-cutting line and the Adds/Changes list - they were the repetition's vehicles.
 
 ### The plan written inside the design
+
 Cause: each slice lists files to touch, container tokens, method names, the order of `DELETE FROM` in the test suite, the union type on the screen.
 Solution: identifier ceiling - route, table, column, class, glossary term. Below that is the plan's. The design says what will exist; the plan says what will be done.
 
 ### A diagram nobody checked
+
 Cause: the entity diagram says every ledger entry has an Invoice; the code says Refund and Adjustment entries have none.
 Solution: every diagram is read back against the repository before it lands. A picture is believed faster than prose, which is exactly why a wrong one costs more.
-
