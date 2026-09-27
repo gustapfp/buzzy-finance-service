@@ -11,10 +11,9 @@ Make the smallest correct change that solves the requested task, in a way that p
 
 | Task                                  | Command                                             |
 | ------------------------------------- | --------------------------------------------------- |
-| Run dev API (dev env)                 | `pnpm dev`                                          |
-| Run dev API against test env          | `pnpm dev:test`                                     |
+| Run dev API                           | `pnpm dev`                                          |
 | Run the full e2e suite                | `pnpm test`                                         |
-| Watch tests (server must already run) | `pnpm watch`                                        |
+| Watch tests                           | `pnpm watch`                                        |
 | Type-check / build                    | `pnpm build`                                        |
 | Lint                                  | `pnpm lint:eslint:check`                            |
 | Format / check format                 | `pnpm lint:prettier` / `pnpm lint:prettier:check`   |
@@ -22,9 +21,10 @@ Make the smallest correct change that solves the requested task, in a way that p
 | Apply / revert migrations             | `pnpm migrate:up` / `pnpm migrate:down`             |
 | Docker services                       | `pnpm compose:up` / `compose:stop` / `compose:down` |
 
-`pnpm test` boots Docker, starts the API with `.env.test`, and runs Jest with
-`--runInBand`. It needs Docker running. If you cannot run it, say so — do not
-claim tests passed.
+`pnpm test` boots Docker, starts the API with `.env.development`, and runs Jest
+with `--runInBand`. It needs Docker running. If you cannot run it, say so — do
+not claim tests passed. Each test drops the `public` schema, so a test run
+clears the development database.
 
 ## Build & run
 
@@ -76,8 +76,9 @@ Coding conventions that only matter for certain files live in the repo-root `.cu
 
 ## Environment
 
-- `.env.development`, `.env.test`, `.env.prod` are gitignored and not in the repo.
-  CI writes `.env.test` from the `TEST_ENV` secret.
+- `.env.development` and `.env.prod` are gitignored and not in the repo.
+  CI writes `.env.development` from the `TEST_ENV` secret. That secret has to
+  match local `.env.development`, including `POSTGRES_PORT=5432`.
 - Keys in use: `POSTGRES_`, `DATABASE_URL`, `NODE_ENV`, `BASE_URL`, `WEBAPP_URL`,
   `SALT_ROUNDS`, `APP_SECRET`, `BETTER_AUTH_SECRET`, `SMTP_HOST`, `SMTP_PORT`,
   `EMAIL_HTTP_HOST`, `EMAIL_HTTP_PORT`, `EMAIL_SENDER`.

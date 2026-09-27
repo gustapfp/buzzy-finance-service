@@ -10,16 +10,6 @@ services:
       - buzzy_finance_postgresql_local:/backups
     env_file:
       - ../../../.env.development
-  postgresql_test:
-    container_name: buzzy_finance_db_test
-    image: postgres:16.0-alpine3.18
-    ports:
-      - "5433:5432"
-    volumes:
-      - buzzy_finance_postgresql_test:/var/lib/postgresql/data
-      - buzzy_finance_postgresql_test:/backups
-    env_file:
-      - ../../../.env.test
   mailcatcher:
     container_name: buzzy_finance_mailcatcher_local
     image: "sj26/mailcatcher"
@@ -30,4 +20,3 @@ services:
       - "1080:1080"
 volumes:
   buzzy_finance_postgresql_local: {}
-  buzzy_finance_postgresql_test: {}

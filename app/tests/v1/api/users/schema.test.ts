@@ -21,7 +21,18 @@ describe("users schema", () => {
 
     await execFileAsync(
       "pnpm",
-      ["exec", "node-pg-migrate", "-j", "ts", "-m", "./app/infra/migrations", "--envPath", ".env.test", "up", "4"],
+      [
+        "exec",
+        "node-pg-migrate",
+        "-j",
+        "ts",
+        "-m",
+        "./app/infra/migrations",
+        "--envPath",
+        ".env.development",
+        "up",
+        "4",
+      ],
       {
         cwd: process.cwd(),
         env: { ...process.env, NODE_OPTIONS: "--import tsx" },
