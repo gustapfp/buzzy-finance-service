@@ -1,6 +1,15 @@
+import http from "http";
 import { DB_POOL } from "infra/database/database";
 import { waitForServices } from "infra/scripts/waitForServices";
-import { applyMigrations, cleanDatabase, createUser } from "../utils";
+import {
+  applyMigrations,
+  cleanDatabase,
+  registerAndActivate,
+  extractSessionCookie as sharedExtractSessionCookie,
+  getCurrentUser,
+  UNAUTHORIZED_BODY,
+  ISO_TIMESTAMP,
+} from "../utils";
 import type { LoginResponseBody } from "api/v1/session/types";
 
 const LOGIN_URL = `${process.env.BASE_URL}/api/v1/session/login`;
@@ -27,10 +36,7 @@ const logoutRequest = (cookie: string, userAgent: string = "jest-test-agent") =>
   });
 };
 
-const extractSessionCookie = (response: Response): string => {
-  const setCookie = response.headers.get("set-cookie") || "";
-  return setCookie.split(";")[0] ?? ""; // "sdi=<token>"
-};
+const extractSessionCookie = (response: Response): string => sharedExtractSessionCookie(response);
 
 const parseLoginBody = async (response: Response): Promise<LoginResponseBody> => {
   return (await response.json()) as LoginResponseBody;
@@ -52,41 +58,34 @@ describe("Session API", () => {
       try {
         await cleanDatabase(client);
         await applyMigrations();
-        await createUser(TEST_USER);
+        await registerAndActivate(TEST_USER);
       } finally {
         client.release();
       }
     });
 
-    it("returns 200 and a session_token when credentials are correct", async () => {
+    it("C10 login sets better-auth.session_token without Secure", async () => {
       const response = await loginRequest(
         { email: TEST_USER.email, password: TEST_USER.password },
         { "User-Agent": "jest-test-agent" },
       );
       const body = await parseLoginBody(response);
+      const setCookie = response.headers.getSetCookie().find((cookie) => cookie.includes("better-auth.session_token="));
 
       expect(response.status).toBe(200);
-      expect(body).toHaveProperty("session_token");
-      expect(typeof body.session_token).toBe("string");
-      expect(body.session_token.length).toBeGreaterThan(0);
-    });
-
-    it("sets the 'sdi' session cookie via Set-Cookie header", async () => {
-      const response = await loginRequest(
-        { email: TEST_USER.email, password: TEST_USER.password },
-        { "User-Agent": "jest-test-agent" },
-      );
-
-      const setCookie = response.headers.get("set-cookie");
+      expect(body).toEqual({});
+      expect(body).not.toHaveProperty("session_token");
+      expect(body).not.toHaveProperty("password");
       expect(setCookie).toBeDefined();
-      expect(setCookie).toContain("sdi=");
+      expect(setCookie).toContain("better-auth.session_token=");
+      expect(setCookie).not.toContain("__Secure-better-auth.session_token=");
       expect(setCookie).toContain("HttpOnly");
-      expect(setCookie).toContain("Secure");
-      expect(setCookie).toContain("SameSite=Strict");
       expect(setCookie).toContain("Path=/");
+      expect(setCookie).toContain("Max-Age=2592000");
+      expect(setCookie).not.toMatch(/;\s*Secure(?:;|$)/);
     });
 
-    it("returns a unique session_token for each login", async () => {
+    it("returns a distinct session for each login", async () => {
       const res1 = await loginRequest(
         { email: TEST_USER.email, password: TEST_USER.password },
         { "User-Agent": "jest-test-agent" },
@@ -95,21 +94,15 @@ describe("Session API", () => {
         { email: TEST_USER.email, password: TEST_USER.password },
         { "User-Agent": "jest-test-agent" },
       );
-      const body1 = await parseLoginBody(res1);
-      const body2 = await parseLoginBody(res2);
-
-      expect(body1.session_token).not.toBe(body2.session_token);
-    });
-
-    it("session_token in body matches cookie value", async () => {
-      const response = await loginRequest(
-        { email: TEST_USER.email, password: TEST_USER.password },
-        { "User-Agent": "jest-test-agent" },
-      );
-      const body = await parseLoginBody(response);
-      const cookie = extractSessionCookie(response);
-
-      expect(cookie).toBe(`sdi=${body.session_token}`);
+      expect(res1.status).toBe(200);
+      expect(res2.status).toBe(200);
+      const dbClient = await DB_POOL.connect();
+      try {
+        const result = await dbClient.query("SELECT count(*)::int AS cnt FROM session");
+        expect(result.rows[0].cnt).toBe(2);
+      } finally {
+        dbClient.release();
+      }
     });
 
     it("stores the correct user-agent in the session record", async () => {
@@ -118,13 +111,14 @@ describe("Session API", () => {
         { email: TEST_USER.email, password: TEST_USER.password },
         { "User-Agent": customAgent },
       );
-      const body = await parseLoginBody(response);
+      expect(response.status).toBe(200);
 
-      // Query the session directly from the DB
       const dbClient = await DB_POOL.connect();
       try {
-        const result = await dbClient.query("SELECT * FROM session WHERE token = $1", [body.session_token]);
-        expect(result.rows.length).toBe(1);
+        const result = await dbClient.query(
+          "SELECT user_agent FROM session WHERE user_id = (SELECT id FROM users WHERE email = $1) ORDER BY created_at DESC LIMIT 1",
+          [TEST_USER.email],
+        );
         expect(result.rows[0].user_agent).toBe(customAgent);
       } finally {
         dbClient.release();
@@ -136,11 +130,14 @@ describe("Session API", () => {
         { email: TEST_USER.email, password: TEST_USER.password },
         { "User-Agent": "jest-test-agent" },
       );
-      const body = await parseLoginBody(response);
+      expect(response.status).toBe(200);
 
       const dbClient = await DB_POOL.connect();
       try {
-        const result = await dbClient.query("SELECT * FROM session WHERE token = $1", [body.session_token]);
+        const result = await dbClient.query(
+          "SELECT expires_at FROM session WHERE user_id = (SELECT id FROM users WHERE email = $1) ORDER BY created_at DESC LIMIT 1",
+          [TEST_USER.email],
+        );
         const expiresAt = new Date(result.rows[0].expires_at);
         const now = new Date();
         const diffInDays = (expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
@@ -152,40 +149,20 @@ describe("Session API", () => {
       }
     });
 
-    it("evicts the oldest session when user exceeds the max session limit (5)", async () => {
-      const tokens: string[] = [];
-
-      // Create 6 sessions (limit is 3)
+    it("C12 a fourth login leaves the oldest session valid", async () => {
+      const cookies: string[] = [];
       for (let i = 0; i < 4; i++) {
         const res = await loginRequest(
           { email: TEST_USER.email, password: TEST_USER.password },
           { "User-Agent": `agent-${i}` },
         );
         expect(res.status).toBe(200);
-        const body = await parseLoginBody(res);
-        tokens.push(body.session_token);
+        expect(res.headers.get("set-cookie")).toContain("better-auth.session_token=");
+        cookies.push(extractSessionCookie(res));
       }
 
-      const dbClient = await DB_POOL.connect();
-      try {
-        // Total active sessions should be capped at 3
-        const result = await dbClient.query(
-          "SELECT count(*)::int AS cnt FROM session WHERE user_id = (SELECT user_id FROM session LIMIT 1)",
-        );
-        expect(result.rows[0].cnt).toBe(3);
-
-        // The first (oldest) session should have been evicted
-        const oldest = await dbClient.query("SELECT * FROM session WHERE token = $1", [tokens[0]]);
-        expect(oldest.rows.length).toBe(0);
-
-        // The most recent 3 sessions should still exist
-        for (let i = 1; i <= 3; i++) {
-          const check = await dbClient.query("SELECT * FROM session WHERE token = $1", [tokens[i]]);
-          expect(check.rows.length).toBe(1);
-        }
-      } finally {
-        dbClient.release();
-      }
+      const oldest = await getCurrentUser(cookies[0], { "User-Agent": "agent-0" });
+      expect(oldest.status).toBe(200);
     });
   });
 
@@ -198,22 +175,21 @@ describe("Session API", () => {
       try {
         await cleanDatabase(client);
         await applyMigrations();
-        await createUser(TEST_USER);
+        await registerAndActivate(TEST_USER);
       } finally {
         client.release();
       }
     });
 
-    it("returns 401 when the email is correct but password is wrong", async () => {
+    it("C11 wrong password returns 401 without a cookie", async () => {
       const response = await loginRequest(
         { email: TEST_USER.email, password: "WrongPassword!999" },
         { "User-Agent": "jest-test-agent" },
       );
 
       expect(response.status).toBe(401);
-      const body = await response.json();
-      expect(body).toHaveProperty("name", "unauthorized");
-      expect(body).not.toHaveProperty("session_token");
+      expect(await response.json()).toEqual(UNAUTHORIZED_BODY);
+      expect(response.headers.get("set-cookie")).toBeNull();
     });
 
     it("returns 401 when the email does not exist", async () => {
@@ -297,13 +273,13 @@ describe("Session API", () => {
       expect(response.status).toBe(200);
     });
 
-    it("returns 401 when the User-Agent header is an empty string", async () => {
+    it("returns 200 when the User-Agent header is an empty string", async () => {
       const response = await loginRequest(
         { email: TEST_USER.email, password: TEST_USER.password },
         { "User-Agent": "" },
       );
 
-      expect(response.status).toBe(401);
+      expect(response.status).toBe(200);
     });
 
     it("does not set a session cookie on failed login", async () => {
@@ -386,63 +362,13 @@ describe("Session API", () => {
       try {
         await cleanDatabase(client);
         await applyMigrations();
-        await createUser(TEST_USER);
+        await registerAndActivate(TEST_USER);
       } finally {
         client.release();
       }
     });
 
-    it("returns 200 and clears the sdi cookie", async () => {
-      // Login first to get a valid session
-      const loginRes = await loginRequest(
-        { email: TEST_USER.email, password: TEST_USER.password },
-        { "User-Agent": "jest-test-agent" },
-      );
-      expect(loginRes.status).toBe(200);
-      const cookie = extractSessionCookie(loginRes);
-
-      // Logout
-      const logoutRes = await logoutRequest(cookie);
-      expect(logoutRes.status).toBe(200);
-
-      // Cookie should be cleared
-      const setCookie = logoutRes.headers.get("set-cookie");
-      expect(setCookie).toBeDefined();
-      expect(setCookie).toContain("sdi=");
-    });
-
-    it("removes the session row from the database on logout", async () => {
-      const loginRes = await loginRequest(
-        { email: TEST_USER.email, password: TEST_USER.password },
-        { "User-Agent": "jest-test-agent" },
-      );
-      const body = await parseLoginBody(loginRes);
-      const cookie = extractSessionCookie(loginRes);
-
-      // Confirm session exists
-      const dbClient = await DB_POOL.connect();
-      try {
-        const before = await dbClient.query("SELECT * FROM session WHERE token = $1", [body.session_token]);
-        expect(before.rows.length).toBe(1);
-      } finally {
-        dbClient.release();
-      }
-
-      // Logout
-      await logoutRequest(cookie);
-
-      // Confirm session is gone
-      const dbClient2 = await DB_POOL.connect();
-      try {
-        const after = await dbClient2.query("SELECT * FROM session WHERE token = $1", [body.session_token]);
-        expect(after.rows.length).toBe(0);
-      } finally {
-        dbClient2.release();
-      }
-    });
-
-    it("does not affect other active sessions on logout", async () => {
-      // Create two sessions
+    it("C17 logout clears that session and keeps the other", async () => {
       const loginRes1 = await loginRequest(
         { email: TEST_USER.email, password: TEST_USER.password },
         { "User-Agent": "agent-1" },
@@ -451,21 +377,20 @@ describe("Session API", () => {
         { email: TEST_USER.email, password: TEST_USER.password },
         { "User-Agent": "agent-2" },
       );
-      const body2 = await parseLoginBody(loginRes2);
       const cookie1 = extractSessionCookie(loginRes1);
+      const cookie2 = extractSessionCookie(loginRes2);
 
-      // Logout session 1 (must use same agent it was created with)
-      const logoutRes1 = await logoutRequest(cookie1, "agent-1");
-      expect(logoutRes1.status).toBe(200);
+      const logoutRes = await logoutRequest(cookie1, "agent-1");
+      expect(logoutRes.status).toBe(200);
+      const cleared = logoutRes.headers.getSetCookie().find((cookie) => cookie.includes("better-auth.session_token="));
+      expect(cleared).toContain("Max-Age=0");
 
-      // Session 2 should still exist
-      const dbClient = await DB_POOL.connect();
-      try {
-        const result = await dbClient.query("SELECT * FROM session WHERE token = $1", [body2.session_token]);
-        expect(result.rows.length).toBe(1);
-      } finally {
-        dbClient.release();
-      }
+      const later = await getCurrentUser(cookie1, { "User-Agent": "agent-1" });
+      expect(later.status).toBe(401);
+      expect(await later.json()).toEqual(UNAUTHORIZED_BODY);
+
+      const other = await getCurrentUser(cookie2, { "User-Agent": "agent-2" });
+      expect(other.status).toBe(200);
     });
   });
 
@@ -478,7 +403,7 @@ describe("Session API", () => {
       try {
         await cleanDatabase(client);
         await applyMigrations();
-        await createUser(TEST_USER);
+        await registerAndActivate(TEST_USER);
       } finally {
         client.release();
       }
@@ -527,7 +452,7 @@ describe("Session API", () => {
       expect(response.status).toBe(401);
     });
 
-    it("returns 401 when user-agent does not match the session's stored agent", async () => {
+    it("returns 200 when user-agent does not match the session's stored agent", async () => {
       const loginRes = await loginRequest(
         { email: TEST_USER.email, password: TEST_USER.password },
         { "User-Agent": "original-agent" },
@@ -535,9 +460,8 @@ describe("Session API", () => {
       expect(loginRes.status).toBe(200);
       const cookie = extractSessionCookie(loginRes);
 
-      // Try to logout with a different user-agent
       const response = await logoutRequest(cookie, "different-agent");
-      expect(response.status).toBe(401);
+      expect(response.status).toBe(200);
     });
   });
 
@@ -578,7 +502,7 @@ describe("Session API", () => {
       try {
         await cleanDatabase(client);
         await applyMigrations();
-        await createUser(TEST_USER);
+        await registerAndActivate(TEST_USER);
       } finally {
         client.release();
       }
@@ -648,6 +572,134 @@ describe("Session API", () => {
 
       // Exact match should fail with whitespace
       expect([200, 401]).toContain(response.status);
+    });
+  });
+
+  describe("GET /v1/user session", () => {
+    beforeEach(async () => {
+      client = await DB_POOL.connect();
+      try {
+        await cleanDatabase(client);
+        await applyMigrations();
+        await registerAndActivate(TEST_USER);
+      } finally {
+        client.release();
+      }
+    });
+
+    const loginCookie = async (userAgent = "jest-test-agent") => {
+      const response = await loginRequest(
+        { email: TEST_USER.email, password: TEST_USER.password },
+        { "User-Agent": userAgent },
+      );
+      expect(response.status).toBe(200);
+      return extractSessionCookie(response);
+    };
+
+    it("C13 live cookie returns the session user and slides expiry", async () => {
+      const cookie = await loginCookie();
+      const before = Date.now();
+      const first = await getCurrentUser(cookie);
+      const firstBody = (await first.json()) as {
+        session: { updated_at: string; expires_at: string };
+        user: { username: string; email: string; permission: string[]; updated_at: string; password?: string };
+      };
+      expect(first.status).toBe(200);
+      expect(firstBody.session.updated_at).toMatch(ISO_TIMESTAMP);
+      expect(firstBody.session.expires_at).toMatch(ISO_TIMESTAMP);
+      expect(firstBody.user.updated_at).toMatch(ISO_TIMESTAMP);
+      expect(firstBody.user).toEqual({
+        username: TEST_USER.username,
+        email: TEST_USER.email,
+        permission: ["create:session:own"],
+        updated_at: firstBody.user.updated_at,
+      });
+      expect(firstBody).not.toHaveProperty("password");
+      expect(firstBody.user).not.toHaveProperty("password");
+      const expiresAt = Date.parse(firstBody.session.expires_at);
+      expect(Math.abs(expiresAt - (before + 30 * 24 * 60 * 60 * 1000))).toBeLessThanOrEqual(60_000);
+      expect(first.headers.get("set-cookie")).toContain("better-auth.session_token=");
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      const second = await getCurrentUser(cookie);
+      const secondBody = (await second.json()) as { session: { expires_at: string } };
+      expect(Date.parse(secondBody.session.expires_at)).toBeGreaterThan(expiresAt);
+    });
+
+    it("C14 missing cookie returns 401", async () => {
+      const response = await getCurrentUser(undefined, {});
+      expect(response.status).toBe(401);
+      expect(await response.json()).toEqual(UNAUTHORIZED_BODY);
+    });
+
+    it("C14 unknown cookie returns 401", async () => {
+      const response = await getCurrentUser("better-auth.session_token=unknown");
+      expect(response.status).toBe(401);
+      expect(await response.json()).toEqual(UNAUTHORIZED_BODY);
+    });
+
+    it("C14 expired session returns 401", async () => {
+      const cookie = await loginCookie();
+      const dbClient = await DB_POOL.connect();
+      try {
+        await dbClient.query(`UPDATE session SET expires_at = timezone('utc', now()) - interval '1 minute'`);
+      } finally {
+        dbClient.release();
+      }
+      const response = await getCurrentUser(cookie);
+      expect(response.status).toBe(401);
+      expect(await response.json()).toEqual(UNAUTHORIZED_BODY);
+    });
+
+    it("C15 deleted user session cookie returns 401", async () => {
+      const cookie = await loginCookie();
+      const dbClient = await DB_POOL.connect();
+      try {
+        await dbClient.query(`DELETE FROM users WHERE email = $1`, [TEST_USER.email]);
+      } finally {
+        dbClient.release();
+      }
+      const response = await getCurrentUser(cookie);
+      expect(response.status).toBe(401);
+      expect(await response.json()).toEqual(UNAUTHORIZED_BODY);
+    });
+
+    it("C16 a different user agent is accepted", async () => {
+      const cookie = await loginCookie("original-agent");
+      const response = await getCurrentUser(cookie, { "User-Agent": "other-agent" });
+      expect(response.status).toBe(200);
+    });
+
+    it("C16 a missing user agent is accepted", async () => {
+      const cookie = await loginCookie();
+      const url = new URL(`${process.env.BASE_URL}/api/v1/user`);
+      const status = await new Promise<number>((resolve, reject) => {
+        const req = http.request(
+          {
+            hostname: url.hostname,
+            port: url.port,
+            path: url.pathname,
+            method: "GET",
+            headers: { Cookie: cookie },
+          },
+          (res) => {
+            res.resume();
+            resolve(res.statusCode ?? 0);
+          },
+        );
+        req.on("error", reject);
+        req.end();
+      });
+      expect(status).toBe(200);
+    });
+
+    it("C18 logout without a cookie returns 401 and keeps sessions", async () => {
+      const cookie = await loginCookie();
+      const response = await fetch(LOGOUT_URL, { method: "DELETE" });
+      expect(response.status).toBe(401);
+      expect(await response.json()).toEqual(UNAUTHORIZED_BODY);
+      const still = await getCurrentUser(cookie);
+      expect(still.status).toBe(200);
     });
   });
 

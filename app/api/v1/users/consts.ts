@@ -1,11 +1,3 @@
-export const CREATE_USER_STATEMENT = `
-INSERT INTO
-  users (username, email, password, permission)
-VALUES
-  ($1, $2, $3, $4)
-RETURNING *;
-`;
-
 export const GET_USER_BY_USERNAME_STATEMENT = `
 SELECT *
 FROM users
@@ -38,11 +30,27 @@ UPDATE users
 SET
   username = $2,
   email = $3,
-  password = $4,
   updated_at = timezone('utc', now())
 WHERE
   username = $1
 RETURNING *;
+`;
+
+export const UPDATE_ACCOUNT_PASSWORD_STATEMENT = `
+UPDATE account
+SET
+  password = $2,
+  updated_at = timezone('utc', now())
+WHERE
+  user_id = $1
+  AND provider_id = 'credential';
+`;
+
+export const DELETE_OTHER_SESSIONS_STATEMENT = `
+DELETE FROM session
+WHERE
+  user_id = $1
+  AND token <> $2;
 `;
 
 export const ADD_USER_PERMISSION_STATEMENT = `

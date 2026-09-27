@@ -79,8 +79,8 @@ Coding conventions that only matter for certain files live in the repo-root `.cu
 - `.env.development`, `.env.test`, `.env.prod` are gitignored and not in the repo.
   CI writes `.env.test` from the `TEST_ENV` secret.
 - Keys in use: `POSTGRES_`, `DATABASE_URL`, `NODE_ENV`, `BASE_URL`, `WEBAPP_URL`,
-  `SALT_ROUNDS`, `APP_SECRET`, `SMTP_HOST`, `SMTP_PORT`, `EMAIL_HTTP_HOST`,
-  `EMAIL_HTTP_PORT`, `EMAIL_SENDER`.
+  `SALT_ROUNDS`, `APP_SECRET`, `BETTER_AUTH_SECRET`, `SMTP_HOST`, `SMTP_PORT`,
+  `EMAIL_HTTP_HOST`, `EMAIL_HTTP_PORT`, `EMAIL_SENDER`.
 - Never print, commit, or send secret values. If a task needs a new env var, add
   it to the list here and tell the user to set it in all three env files.
 

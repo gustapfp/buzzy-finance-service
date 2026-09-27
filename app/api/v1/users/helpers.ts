@@ -1,8 +1,5 @@
 import { DB } from "infra/database/database";
 import { ValidationError } from "infra/errors/ValidationError";
-import { User, UserGetByUsernameResponseBody, UserUpdateRequestBody } from "./types";
-import { authManager } from "infra/auth/authManager";
-import { activationManager } from "infra/auth/activation";
 
 const thisEmailAlreadyExits = async (email: string): Promise<boolean> => {
   const statement = `
@@ -47,17 +44,8 @@ export const newUserIsValid = async (email?: string, username?: string) => {
   return true;
 };
 
-export const getUserProvidedValues = async (
-  currentUser: UserGetByUsernameResponseBody,
-  userUpdates: UserUpdateRequestBody,
-) => {
-  const newUsername = userUpdates.username ?? currentUser.username;
-  const newEmail = userUpdates.email ?? currentUser.email;
-  const newPassword = userUpdates.password ? authManager.hashPassword(userUpdates.password) : currentUser!.password;
-  return { username: newUsername, email: newEmail, password: newPassword };
-};
-
-export const sendUserActivationEmail = async (newUser: User) => {
-  const activationToken = await activationManager.createActivationToken(newUser.id);
-  return await activationManager.sendTokenToUserEmail(newUser, activationToken);
+export const passwordLengthIsValid = (password: string) => {
+  if (password.length < 8 || password.length > 128) {
+    throw new ValidationError(null, ["password"]);
+  }
 };

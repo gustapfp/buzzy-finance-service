@@ -1,12 +1,14 @@
 import { DB } from "infra/database/database";
-import { getUserProvidedValues, newUserIsValid, sendUserActivationEmail } from "./helpers";
+import { newUserIsValid, passwordLengthIsValid } from "./helpers";
 import { logger } from "api/utils/logger";
 import { NotFoundError } from "infra/errors/NotFoundError";
 import { User, UserCreateRequestBody, UserGetByUsernameResponseBody, UserUpdateRequestBody } from "./types";
-import { authManager } from "infra/auth/authManager";
+import { getAuth, toAuthHeaders } from "api/utils/auth";
+import type { Request } from "express";
 import {
-  CREATE_USER_STATEMENT,
   UPDATE_USER_STATEMENT,
+  UPDATE_ACCOUNT_PASSWORD_STATEMENT,
+  DELETE_OTHER_SESSIONS_STATEMENT,
   GET_USER_BY_USERNAME_STATEMENT,
   GET_USER_BY_EMAIL_STATEMENT,
   GET_USER_BY_ID_STATEMENT,
@@ -14,73 +16,83 @@ import {
   REMOVE_USER_PERMISSION_STATEMENT,
   SET_USER_PERMISSIONS_STATEMENT,
 } from "./consts";
-import { Permission, PERMISSIONS, isValidPermission } from "infra/auth/authorization";
+import { Permission, isValidPermission } from "infra/auth/authorization";
 import { PermissionError } from "infra/errors/PermissionError";
 
 const createUser = async (user: UserCreateRequestBody) => {
   try {
-    if (await newUserIsValid(user.email, user.username)) {
-      const hashedPassword = authManager.hashPassword(user.password);
-      const result = await DB.query(CREATE_USER_STATEMENT, [
-        user.username,
-        user.email,
-        hashedPassword,
-        [PERMISSIONS.READ_OWN_TOKEN],
-      ]);
-
-      const newUser: User = result.rows[0];
-      await sendUserActivationEmail(newUser);
-      return {
-        username: newUser.username,
-        created_at: newUser.created_at.toISOString(),
-        updated_at: newUser.updated_at.toISOString(),
-      };
-    }
+    passwordLengthIsValid(user.password);
+    await newUserIsValid(user.email, user.username);
+    const auth = await getAuth();
+    await auth.api.signUpEmail({
+      body: {
+        name: user.username,
+        email: user.email,
+        password: user.password,
+      },
+    });
+    const stored = await findOneByEmail(user.email);
+    return {
+      username: stored.username,
+      created_at: stored.created_at.toISOString(),
+      updated_at: stored.updated_at.toISOString(),
+    };
   } catch (err) {
     logger.error(err, "Error creating user");
     throw err;
   }
 };
 
-const updateUser = async (userUpdates: UserUpdateRequestBody, current_username: string) => {
+const updateUser = async (userUpdates: UserUpdateRequestBody, current_username: string, request: Request) => {
   try {
-    if (await newUserIsValid(userUpdates.email, userUpdates.username)) {
-      const currentUser = await findOneByUsername(current_username, true);
-
-      const newUserValues = await getUserProvidedValues(currentUser, userUpdates);
-      const result = await DB.query(UPDATE_USER_STATEMENT, [
-        current_username,
-        newUserValues.username,
-        newUserValues.email,
-        newUserValues.password,
-      ]);
-      const updatedUser = result.rows[0];
-      return {
-        username: updatedUser.username,
-        email: updatedUser.email,
-        updated_at: updatedUser.updated_at,
-      };
+    if (userUpdates.password !== undefined) {
+      passwordLengthIsValid(userUpdates.password);
     }
+    await newUserIsValid(userUpdates.email, userUpdates.username);
+    const currentUser = await findOneByEmailOrUsername(current_username);
+    const nextUsername = userUpdates.username ?? currentUser.username;
+    const nextEmail = (userUpdates.email ?? currentUser.email).toLowerCase();
+    const result = await DB.query(UPDATE_USER_STATEMENT, [current_username, nextUsername, nextEmail]);
+    const updatedUser = result.rows[0];
+    if (userUpdates.password) {
+      const { hashPassword } = await import("better-auth/crypto");
+      const hash = await hashPassword(userUpdates.password);
+      await DB.query(UPDATE_ACCOUNT_PASSWORD_STATEMENT, [currentUser.id, hash]);
+      const auth = await getAuth();
+      const headers = await toAuthHeaders(request.headers);
+      const session = await auth.api.getSession({ headers });
+      if (session && session.user.id === currentUser.id) {
+        await DB.query(DELETE_OTHER_SESSIONS_STATEMENT, [currentUser.id, session.session.token]);
+      }
+    }
+    return {
+      username: updatedUser.username,
+      email: updatedUser.email,
+      updated_at: updatedUser.updated_at.toISOString(),
+    };
   } catch (err) {
     logger.error(err, "Error updating user");
     throw err;
   }
 };
 
-const findOneByUsername = async (username: string, showPassword?: boolean): Promise<UserGetByUsernameResponseBody> => {
+const findOneByEmailOrUsername = async (username: string): Promise<User> => {
+  const result = await DB.query(GET_USER_BY_USERNAME_STATEMENT, [username]);
+  if (result.rows.length === 0) {
+    throw new NotFoundError(null, "User not found", "Check the username and try again.");
+  }
+  return result.rows[0];
+};
+
+const findOneByUsername = async (username: string): Promise<UserGetByUsernameResponseBody> => {
   try {
-    const result = await DB.query(GET_USER_BY_USERNAME_STATEMENT, [username]);
-    if (result.rows.length === 0) {
-      throw new NotFoundError(null, "User not found", "Check the username and try again.");
-    }
-    const user: User = result.rows[0];
+    const user = await findOneByEmailOrUsername(username);
     return {
       username: user.username,
       email: user.email,
       permission: user.permission,
       created_at: user.created_at.toISOString(),
       updated_at: user.updated_at.toISOString(),
-      ...(showPassword && { password: user.password }),
     };
   } catch (err) {
     logger.error(err, "Error getting user by username");

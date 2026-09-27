@@ -1,8 +1,19 @@
 import { DB, DB_POOL } from "infra/database/database";
 import { waitForServices } from "infra/scripts/waitForServices";
-import { createUser, updateUser, applyMigrations, cleanDatabase, loginUser, extractSessionCookie } from "../utils";
-import { User } from "api/v1/users/types";
-import { authManager } from "infra/auth/authManager";
+import {
+  createUser,
+  updateUser,
+  applyMigrations,
+  cleanDatabase,
+  loginUser,
+  extractSessionCookie,
+  registerAndActivate,
+  getCurrentUser,
+  deleteAllEmails,
+  listEmails,
+  ISO_TIMESTAMP,
+  UNAUTHORIZED_BODY,
+} from "../utils";
 import { Permission, PERMISSIONS } from "infra/auth/authorization";
 import userModel from "api/v1/users/model";
 import { NotFoundError } from "infra/errors/NotFoundError";
@@ -111,7 +122,7 @@ describe("PUT /v1/user/:username", () => {
       const result = await DB.query(`SELECT permission FROM users WHERE LOWER(username) = LOWER($1) LIMIT 1;`, [
         seedUser.username,
       ]);
-      expect(result.rows[0].permission).toEqual([PERMISSIONS.READ_OWN_TOKEN]);
+      expect(result.rows[0].permission).toEqual([]);
     });
 
     it("Updates multiple fields at once", async () => {
@@ -256,21 +267,22 @@ describe("PUT /v1/user/:username", () => {
         cookie,
       );
 
-      const result = await DB.query(`SELECT * FROM users WHERE LOWER(username) = LOWER($1) LIMIT 1;`, [
-        seedUser.username,
-      ]);
-      const user: User = result.rows[0];
+      const result = await DB.query(
+        `SELECT account.password FROM account JOIN users ON users.id = account.user_id WHERE LOWER(users.username) = LOWER($1) LIMIT 1;`,
+        [seedUser.username],
+      );
+      const storedHash = result.rows[0].password;
 
-      expect(user.password).not.toBe(newPassword);
-      expect(user.password).toMatch(/^\$2[aby]\$\d{2}\$.{53}$/);
-      expect(authManager.comparePassword(newPassword, user.password)).toBe(true);
-      expect(() => authManager.comparePassword(seedUser.password, user.password)).toThrow();
+      expect(storedHash).not.toBe(newPassword);
+      expect(storedHash).not.toBe(`${newPassword}.${process.env.APP_SECRET}`);
+      expect(storedHash).not.toContain(newPassword);
     });
 
     it("Password is not re-hashed when not provided in update", async () => {
-      const beforeUpdate = await DB.query(`SELECT password FROM users WHERE LOWER(username) = LOWER($1) LIMIT 1;`, [
-        seedUser.username,
-      ]);
+      const beforeUpdate = await DB.query(
+        `SELECT account.password FROM account JOIN users ON users.id = account.user_id WHERE LOWER(users.username) = LOWER($1) LIMIT 1;`,
+        [seedUser.username],
+      );
       const originalHash = beforeUpdate.rows[0].password;
 
       await updateUser(
@@ -282,9 +294,10 @@ describe("PUT /v1/user/:username", () => {
         cookie,
       );
 
-      const afterUpdate = await DB.query(`SELECT password FROM users WHERE LOWER(username) = LOWER($1) LIMIT 1;`, [
-        "renamedUser",
-      ]);
+      const afterUpdate = await DB.query(
+        `SELECT account.password FROM account JOIN users ON users.id = account.user_id WHERE LOWER(users.username) = LOWER($1) LIMIT 1;`,
+        ["renamedUser"],
+      );
       const updatedHash = afterUpdate.rows[0].password;
 
       expect(updatedHash).toBe(originalHash);
@@ -321,6 +334,10 @@ describe("PUT /v1/user/:username", () => {
         client.release();
       }
       await createUser(seedUser);
+      await DB.query(`UPDATE users SET permission = $2 WHERE username = $1`, [
+        seedUser.username,
+        [PERMISSIONS.READ_OWN_TOKEN],
+      ]);
     });
 
     describe("addUserPermission", () => {
@@ -426,6 +443,102 @@ describe("PUT /v1/user/:username", () => {
         const updatedUser = await userModel.removeUserPermission(seedUser.username, PERMISSIONS.READ_OWN_TOKEN);
         expect(updatedUser!.permission).toEqual([]);
       });
+    });
+  });
+
+  describe("Criteria", () => {
+    beforeEach(async () => {
+      client = await DB_POOL.connect();
+      try {
+        await cleanDatabase(client);
+        await applyMigrations();
+        await deleteAllEmails();
+      } finally {
+        client.release();
+      }
+    });
+
+    it("C19 password change keeps the current session and drops the other", async () => {
+      await registerAndActivate(seedUser);
+      const firstLogin = await loginUser({ email: seedUser.email, password: seedUser.password });
+      const secondLogin = await loginUser({ email: seedUser.email, password: seedUser.password }, "other-agent");
+      const currentCookie = extractSessionCookie(firstLogin);
+      const otherCookie = extractSessionCookie(secondLogin);
+      const newPassword = "newPassword123";
+
+      const response = await updateUser(seedUser.username, { password: newPassword }, currentCookie);
+      const body = await response.json();
+      expect(response.status).toBe(200);
+      expect(body).toEqual({
+        username: seedUser.username,
+        email: seedUser.email,
+        updated_at: expect.stringMatching(ISO_TIMESTAMP),
+      });
+      expect(body).not.toHaveProperty("password");
+
+      const newLogin = await loginUser({ email: seedUser.email, password: newPassword });
+      expect(newLogin.status).toBe(200);
+      expect(await newLogin.json()).toEqual({});
+      expect(newLogin.headers.getSetCookie().some((cookie) => cookie.includes("better-auth.session_token="))).toBe(
+        true,
+      );
+      expect(newLogin.headers.getSetCookie().some((cookie) => /;\s*Secure(?:;|$)/.test(cookie))).toBe(false);
+
+      const oldLogin = await loginUser({ email: seedUser.email, password: seedUser.password });
+      expect(oldLogin.status).toBe(401);
+      expect(await oldLogin.json()).toEqual(UNAUTHORIZED_BODY);
+      expect(oldLogin.headers.get("set-cookie")).toBeNull();
+
+      const current = await getCurrentUser(currentCookie);
+      expect(current.status).toBe(200);
+      const other = await getCurrentUser(otherCookie, { "User-Agent": "other-agent" });
+      expect(other.status).toBe(401);
+      expect(await other.json()).toEqual(UNAUTHORIZED_BODY);
+    });
+
+    it("C20 username update sends no email and keeps sessions", async () => {
+      await registerAndActivate(seedUser);
+      await deleteAllEmails();
+      const firstLogin = await loginUser({ email: seedUser.email, password: seedUser.password });
+      const secondLogin = await loginUser({ email: seedUser.email, password: seedUser.password }, "other-agent");
+      const response = await updateUser(seedUser.username, { username: "renamed" }, extractSessionCookie(firstLogin));
+      const body = await response.json();
+      const stored = await DB.query(`SELECT email FROM users WHERE username = $1`, ["renamed"]);
+      expect(response.status).toBe(200);
+      expect(body).toEqual({
+        username: "renamed",
+        email: stored.rows[0].email,
+        updated_at: expect.stringMatching(ISO_TIMESTAMP),
+      });
+      expect(body).not.toHaveProperty("password");
+      expect(await listEmails()).toHaveLength(0);
+      expect((await getCurrentUser(extractSessionCookie(firstLogin))).status).toBe(200);
+      expect((await getCurrentUser(extractSessionCookie(secondLogin), { "User-Agent": "other-agent" })).status).toBe(
+        200,
+      );
+    });
+
+    it("C20 email update sends no email and keeps sessions", async () => {
+      await registerAndActivate(seedUser);
+      await deleteAllEmails();
+      const firstLogin = await loginUser({ email: seedUser.email, password: seedUser.password });
+      const secondLogin = await loginUser({ email: seedUser.email, password: seedUser.password }, "other-agent");
+      const response = await updateUser(
+        seedUser.username,
+        { email: "Renamed@gmail.com" },
+        extractSessionCookie(firstLogin),
+      );
+      const body = (await response.json()) as { email: string; updated_at: string; password?: string };
+      const stored = await DB.query(`SELECT email FROM users WHERE username = $1`, [seedUser.username]);
+      expect(response.status).toBe(200);
+      expect(body.email).toBe(stored.rows[0].email);
+      expect(body.updated_at).toMatch(ISO_TIMESTAMP);
+      expect(body).not.toHaveProperty("password");
+      expect(await listEmails()).toHaveLength(0);
+      expect((await getCurrentUser(extractSessionCookie(firstLogin))).status).toBe(200);
+      expect((await getCurrentUser(extractSessionCookie(secondLogin), { "User-Agent": "other-agent" })).status).toBe(
+        200,
+      );
     });
   });
 

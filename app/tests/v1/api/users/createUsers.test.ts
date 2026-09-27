@@ -1,8 +1,17 @@
 import { DB, DB_POOL } from "infra/database/database";
 import { waitForServices } from "infra/scripts/waitForServices";
-import { createUser, applyMigrations, cleanDatabase } from "../utils";
-import { User } from "api/v1/users/types";
-import { authManager } from "infra/auth/authManager";
+import {
+  createUser,
+  applyMigrations,
+  cleanDatabase,
+  deleteAllEmails,
+  getLastEmail,
+  listEmails,
+  loginUser,
+  ISO_TIMESTAMP,
+  UNAUTHORIZED_BODY,
+  activationTokenFromEmail,
+} from "../utils";
 
 describe("POST /v1/users", () => {
   let client: any;
@@ -69,21 +78,21 @@ describe("POST /v1/users", () => {
 
       const result = await DB.query(
         `
-        SELECT *
-        FROM users
+        SELECT account.password
+        FROM account
+        JOIN users ON users.id = account.user_id
         WHERE
-          LOWER(username) = LOWER($1)
+          LOWER(users.username) = LOWER($1)
         LIMIT
           1;
         `,
         [user1.username],
       );
-      const user: User = result.rows[0];
+      const storedHash = result.rows[0].password;
 
-      expect(user.password).not.toBe(user1.password);
-      expect(user.password).toMatch(/^\$2[aby]\$\d{2}\$.{53}$/);
-      expect(authManager.comparePassword(user1.password, user.password)).toBe(true);
-      expect(() => authManager.comparePassword("hashed password", user.password)).toThrow();
+      expect(storedHash).not.toBe(user1.password);
+      expect(storedHash).not.toBe(`${user1.password}.${process.env.APP_SECRET}`);
+      expect(storedHash).not.toContain(user1.password);
     });
     it("Rejects empty password", async () => {
       const response = await createUser({ username: "user1", email: "user1@gmail.com", password: "" });
@@ -94,10 +103,11 @@ describe("POST /v1/users", () => {
       await createUser(user1);
       const result = await DB.query(
         `
-        SELECT *
-        FROM users
+        SELECT account.password
+        FROM account
+        JOIN users ON users.id = account.user_id
         WHERE
-          LOWER(username) = LOWER($1)
+          LOWER(users.username) = LOWER($1)
         LIMIT
           1;
         `,
@@ -120,31 +130,121 @@ describe("POST /v1/users", () => {
       };
       await createUser(user1);
       await createUser(user2);
-      const result1 = await DB.query(
-        `
-        SELECT *
-        FROM users
-        WHERE
-          LOWER(username) = LOWER($1)
-        LIMIT
-          1;
-        `,
-        [user1.username],
+      const hashFor = async (username: string) => {
+        const result = await DB.query(
+          `
+          SELECT account.password
+          FROM account
+          JOIN users ON users.id = account.user_id
+          WHERE
+            LOWER(users.username) = LOWER($1)
+          LIMIT
+            1;
+          `,
+          [username],
+        );
+        return result.rows[0].password;
+      };
+      expect(await hashFor(user1.username)).not.toBe(await hashFor(user2.username));
+    });
+  });
+
+  describe("Criteria", () => {
+    beforeEach(async () => {
+      client = await DB_POOL.connect();
+      try {
+        await cleanDatabase(client);
+        await applyMigrations();
+        await deleteAllEmails();
+      } finally {
+        client.release();
+      }
+    });
+
+    it("C1 signup returns 201 without a cookie and stores an empty permission", async () => {
+      const user1 = { username: "user1", email: "User1@gmail.com", password: "user1234" };
+      const userResponse = await createUser(user1);
+      const userResponseBody = await userResponse.json();
+
+      expect(userResponse.status).toBe(201);
+      expect(userResponseBody).toEqual({
+        username: user1.username,
+        created_at: expect.stringMatching(ISO_TIMESTAMP),
+        updated_at: expect.stringMatching(ISO_TIMESTAMP),
+      });
+      expect(userResponseBody).not.toHaveProperty("password");
+      expect(userResponseBody).not.toHaveProperty("email");
+      expect(userResponseBody).not.toHaveProperty("id");
+      expect(userResponseBody).not.toHaveProperty("permission");
+      expect(userResponse.headers.get("set-cookie")).toBeNull();
+
+      const stored = await DB.query(`SELECT email, permission FROM users WHERE username = $1`, [user1.username]);
+      expect(stored.rows[0].permission).toEqual([]);
+      expect(stored.rows[0].email).toBe(user1.email.toLowerCase());
+    });
+
+    it("C2 login before activation returns 401 without a cookie", async () => {
+      const user1 = { username: "user1", email: "user1@gmail.com", password: "user1234" };
+      await createUser(user1);
+      const loginResponse = await loginUser({ email: user1.email, password: user1.password });
+      const body = await loginResponse.json();
+      expect(loginResponse.status).toBe(401);
+      expect(body).toEqual(UNAUTHORIZED_BODY);
+      expect(loginResponse.headers.get("set-cookie")).toBeNull();
+    });
+
+    it("C3 signup sends the activation email", async () => {
+      const user1 = { username: "user1", email: "User1@gmail.com", password: "user1234" };
+      await createUser(user1);
+      const emails = await listEmails();
+      expect(emails).toHaveLength(1);
+      const email = await getLastEmail();
+      const token = activationTokenFromEmail(email.text);
+      const link = `${process.env.WEBAPP_URL}/register/activate?token=${encodeURIComponent(token)}`;
+      expect(email.subject).toBe("Ative a sua conta na Buzzy Finance");
+      expect(email.text.replace(/\r\n/g, "\n").trimEnd()).toBe(
+        `Olá ${user1.username},\n\nPor favor, ative a sua conta clicando no seguinte link:\n\n${link}\n\n Nos vemos logo. Muito Obrigado!`,
       );
-      const result2 = await DB.query(
-        `
-        SELECT *
-        FROM users
-        WHERE
-          LOWER(username) = LOWER($1)
-        LIMIT
-          1;
-        `,
-        [user2.username],
-      );
-      const user1Hash = result1.rows[0].password;
-      const user2Hash = result2.rows[0].password;
-      expect(user1Hash).not.toBe(user2Hash);
+      const payloadPart = token.split(".")[1] ?? "";
+      const payload = JSON.parse(Buffer.from(payloadPart, "base64url").toString("utf8")) as {
+        email?: string;
+        username?: string;
+        iat: number;
+        exp: number;
+      };
+      expect(payload.email).toBe(user1.email.toLowerCase());
+      expect(payload).not.toHaveProperty("username");
+      expect(Math.abs(payload.exp - (payload.iat + 900))).toBeLessThanOrEqual(2);
+    });
+
+    it.each([
+      ["C4 duplicate email returns 422 and stores nothing", { username: "other", email: "User1@gmail.com" }, "email"],
+      [
+        "C4 duplicate username returns 422 and stores nothing",
+        { username: "User1", email: "other@gmail.com" },
+        "username",
+      ],
+      [
+        "C4 duplicate email and username returns 422 and stores nothing",
+        { username: "User1", email: "User1@gmail.com" },
+        "email,username",
+      ],
+    ])("%s", async (_name, duplicate, fields) => {
+      await createUser({ username: "user1", email: "user1@gmail.com", password: "user1234" });
+      await deleteAllEmails();
+      const before = await DB.query(`SELECT count(*)::int AS count FROM users`, []);
+      const response = await createUser({ ...duplicate, password: "user1234" });
+      const body = await response.json();
+      const after = await DB.query(`SELECT count(*)::int AS count FROM users`, []);
+      expect(response.status).toBe(422);
+      expect(body).toEqual({
+        name: "validation_error",
+        message: `These fields are not valid: ${fields}`,
+        action: "Fix the provided fields and try again.",
+        status_code: 422,
+      });
+      expect(after.rows[0].count).toBe(before.rows[0].count);
+      expect(await listEmails()).toHaveLength(0);
     });
   });
   afterAll(async () => {

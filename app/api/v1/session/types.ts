@@ -36,7 +36,5 @@ export interface LoginRequestBody {
 }
 export type LoginRequest = Request<Record<string, never>, any, LoginRequestBody>;
 
-export interface LoginResponseBody {
-  session_token: string;
-}
+export type LoginResponseBody = Record<string, never>;
 export type LoginResponse = Response<LoginResponseBody>;

@@ -60,9 +60,72 @@ export const loginUser = async (credentials: { email: string; password: string }
   });
 };
 
+export const UNAUTHORIZED_BODY = {
+  name: "unauthorized",
+  message: "User Unauthorized to do this operation.",
+  action: "Please try to login again or if you're facing any issue contact the support team.",
+  status_code: 401,
+};
+
+export const ISO_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
+
 export const extractSessionCookie = (response: Response): string => {
-  const setCookie = response.headers.get("set-cookie") || "";
+  const cookies = response.headers.getSetCookie?.() ?? [];
+  const session = cookies.find((cookie) => cookie.includes("better-auth.session_token="));
+  const setCookie = session ?? response.headers.get("set-cookie") ?? "";
   return setCookie.split(";")[0] ?? "";
+};
+
+type CaughtEmail = {
+  id: string;
+  subject: string;
+  sender: string;
+  recipients: string[];
+  text: string;
+};
+
+export const listEmails = async (): Promise<CaughtEmail[]> => {
+  const emailListResponse = await fetch(`${EMAIL_URL}/messages`);
+  return (await emailListResponse.json()) as CaughtEmail[];
+};
+
+export const activationTokenFromEmail = (text: string): string => {
+  const match = text.match(/https?:\/\/\S+/);
+  const link = match?.[0];
+  if (!link) {
+    throw new Error("Activation link missing");
+  }
+  return new URL(link).searchParams.get("token") ?? "";
+};
+
+export const getCurrentUser = async (
+  cookie?: string,
+  headers: Record<string, string> = { "User-Agent": "jest-test-agent" },
+) => {
+  return await fetch(USERS_ENDPOINT_URL, {
+    method: "GET",
+    headers: {
+      ...headers,
+      ...(cookie ? { Cookie: cookie } : {}),
+    },
+  });
+};
+
+export const resendActivation = async (email: string) => {
+  return await fetch(`${USERS_ENDPOINT_URL}/activate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+};
+
+export const registerAndActivate = async (body: { username: string; email: string; password: string }) => {
+  await deleteAllEmails();
+  const created = await createUser(body);
+  const email = await getLastEmail();
+  const token = activationTokenFromEmail(email.text);
+  const activated = await activateUser(token);
+  return { created, email, token, activated };
 };
 
 export const parseLoginBody = async (response: Response): Promise<LoginResponseBody> => {
@@ -99,8 +162,11 @@ export const deleteAllEmails = async () => {
 
 export const getLastEmail = async () => {
   const emailListResponse = await fetch(`${EMAIL_URL}/messages`);
-  const emailListBody = await emailListResponse.json();
+  const emailListBody = (await emailListResponse.json()) as CaughtEmail[];
   const lastEmailItem = emailListBody.pop();
+  if (!lastEmailItem) {
+    throw new Error("No email");
+  }
 
   const emailTextResponse = await fetch(`${EMAIL_URL}/messages/${lastEmailItem.id}.plain`);
   const emailTextBody = await emailTextResponse.text();

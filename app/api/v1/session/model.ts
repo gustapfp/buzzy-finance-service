@@ -1,130 +1,118 @@
-import { BaseSession, Login, Session, SessionUser } from "./types";
-import { DB } from "infra/database/database";
-import { authManager } from "infra/auth/authManager";
-import { logger } from "api/utils/logger";
-import { Request } from "express";
+import { Request, Response } from "express";
 import { UnauthorizedError } from "infra/errors/UnauthorizedError";
-import { stringifySetCookie } from "cookie";
+import { NotFoundError } from "infra/errors/NotFoundError";
+import { copySetCookie, getAuth, toAuthHeaders } from "api/utils/auth";
+import { logger } from "api/utils/logger";
 import userModel from "../users/model";
-import {
-  CREATE_SESSION_STATEMENT,
-  DELETE_SESSION_STATEMENT,
-  EVICT_OLDEST_SESSIONS_STATEMENT,
-  FIND_ONE_VALID_SESSION_BY_TOKEN_STATEMENT,
-  MAX_SESSIONS_PER_USER,
-  UPDATE_SESSION_EXPIRES_AT_STATEMENT,
-} from "./consts";
+import { LoginRequestBody } from "./types";
 
-const evictOldestSessions = async (userId: string) => {
-  await DB.query(EVICT_OLDEST_SESSIONS_STATEMENT, [userId, MAX_SESSIONS_PER_USER]);
-};
-
-const createSession = async (session: BaseSession): Promise<Session> => {
-  await evictOldestSessions(session.user_id);
-
-  const sessionToken = authManager.createSessionToken();
-  const thirtyDaysFromNow = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-
-  const createSessionResponse = await DB.query(CREATE_SESSION_STATEMENT, [
-    sessionToken,
-    session.user_agent,
-    session.user_id,
-    thirtyDaysFromNow,
-  ]);
-  const newSession: Session = createSessionResponse.rows[0];
-  return newSession;
-};
-
-const refreshSession = async (session: Session): Promise<Session> => {
-  const newExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-
-  const result = await DB.query(UPDATE_SESSION_EXPIRES_AT_STATEMENT, [newExpiresAt, session.id]);
-  const updatedSession: Session = result.rows[0];
-  return updatedSession;
-};
-
-const findOneValidSessionByToken = async (token: string, userAgent: string): Promise<Session> => {
+const login = async (request: Request<Record<string, never>, unknown, LoginRequestBody>, response: Response) => {
   try {
-    const result = await DB.query(FIND_ONE_VALID_SESSION_BY_TOKEN_STATEMENT, [token, userAgent]);
-    if (result.rows.length === 0) {
+    const auth = await getAuth();
+    const headers = await toAuthHeaders(request.headers);
+    const webResponse = await auth.api.signInEmail({
+      body: {
+        email: request.body.email,
+        password: request.body.password,
+      },
+      headers,
+      asResponse: true,
+    });
+    if (!webResponse.ok) {
       throw new UnauthorizedError(null);
     }
-    const session: Session = result.rows[0];
-    await refreshSession(session);
-    return session;
-  } catch (err) {
-    logger.error(err, "Error getting session by token");
-    throw err;
-  }
-};
-
-const validateUserSession = async (req: Request): Promise<Session> => {
-  try {
-    const token = authManager.getTokenFromCookie(req);
-    const userAgent = authManager.getUserAgent(req);
-    const userSession = await findOneValidSessionByToken(token, userAgent);
-    return userSession;
-  } catch (err) {
-    logger.error(err, "Error validating user session");
-    throw err;
-  }
-};
-
-const getSessionUser = async (request: Request): Promise<SessionUser> => {
-  try {
-    const session = await validateUserSession(request);
-    const user = await userModel.findOneById(session.user_id);
-    return { session, user };
-  } catch (err) {
-    logger.error(err, "Error getting session user");
-    throw err;
-  }
-};
-
-const login = async (loginObj: Login): Promise<string> => {
-  try {
-    const user = await authManager.authenticate(loginObj.email, loginObj.password);
-    const session: Session = await createSession({
-      user_id: user.id,
-      user_agent: loginObj.userAgent,
-    });
-    return session.token;
+    copySetCookie(webResponse, response);
   } catch (err) {
     logger.error(err, "Error logging in");
-    throw err;
+    if (err instanceof UnauthorizedError) {
+      throw err;
+    }
+    throw new UnauthorizedError(err);
   }
 };
 
-const logout = async (req: Request) => {
+const logout = async (request: Request, response: Response) => {
   try {
-    const userSession = await validateUserSession(req);
-    const result = await DB.query(DELETE_SESSION_STATEMENT, [userSession.token]);
-    return result.rows[0];
+    const auth = await getAuth();
+    const headers = await toAuthHeaders(request.headers);
+    const session = await auth.api.getSession({ headers });
+    if (!session) {
+      throw new UnauthorizedError(null);
+    }
+    const webResponse = await auth.api.signOut({
+      headers,
+      asResponse: true,
+    });
+    copySetCookie(webResponse, response);
   } catch (err) {
     logger.error(err, "Error logging out");
     throw err;
   }
 };
 
-const createCookieSession = (token: string, sessionLengthInDays: number = 30) => {
-  return stringifySetCookie({
-    name: "sdi",
-    value: token,
-    httpOnly: true,
-    secure: true,
-    sameSite: "strict",
-    maxAge: 60 * 60 * 24 * sessionLengthInDays,
-    path: "/",
-  });
+const validateUserSession = async (request: Request) => {
+  try {
+    const auth = await getAuth();
+    const headers = await toAuthHeaders(request.headers);
+    const session = await auth.api.getSession({ headers });
+    if (!session) {
+      throw new UnauthorizedError(null);
+    }
+    return session;
+  } catch (err) {
+    logger.error(err, "Error validating user session");
+    throw err;
+  }
+};
+
+const getCurrentUser = async (request: Request, response: Response) => {
+  try {
+    const auth = await getAuth();
+    const headers = await toAuthHeaders(request.headers);
+    const webResponse = await auth.api.getSession({
+      headers,
+      asResponse: true,
+    });
+    const data = (await webResponse.json()) as {
+      session?: { updatedAt: string; expiresAt: string };
+      user?: { id: string };
+    } | null;
+    if (!data?.session || !data.user) {
+      throw new UnauthorizedError(null);
+    }
+    let user;
+    try {
+      user = await userModel.findOneById(data.user.id);
+    } catch (err) {
+      if (err instanceof NotFoundError) {
+        throw new UnauthorizedError(err);
+      }
+      throw err;
+    }
+    copySetCookie(webResponse, response);
+    return {
+      session: {
+        updated_at: new Date(data.session.updatedAt).toISOString(),
+        expires_at: new Date(data.session.expiresAt).toISOString(),
+      },
+      user: {
+        username: user.username,
+        email: user.email,
+        permission: user.permission,
+        updated_at: user.updated_at.toISOString(),
+      },
+    };
+  } catch (err) {
+    logger.error(err, "Error getting session user");
+    throw err;
+  }
 };
 
 export const sessionModel = {
-  createSession,
   validateUserSession,
-  getSessionUser,
+  getCurrentUser,
   login,
   logout,
-  createCookieSession,
 };
 
 export default sessionModel;

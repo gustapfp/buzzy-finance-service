@@ -11,8 +11,9 @@ import type {
 } from "./types";
 import type { Request, Response } from "express";
 import sessionModel from "../session/model";
-import { activationManager } from "infra/auth/activation";
-import { PERMISSIONS } from "infra/auth/authorization";
+import { getAuth, toAuthHeaders } from "api/utils/auth";
+import { NotFoundError } from "infra/errors/NotFoundError";
+import { BaseError } from "infra/errors/BaseError";
 
 export const getOneUserByUsernameController = async (
   request: UserGetByUsernameRequest,
@@ -38,7 +39,7 @@ export const createUserController = async (request: UserCreateRequest, response:
 
 export const updateUserController = async (request: UserUpdateRequest, response: UserUpdateResponse) => {
   try {
-    const updatedUser = await userModel.updateUser(request.body, request.params.username);
+    const updatedUser = await userModel.updateUser(request.body, request.params.username, request);
     return response.status(200).json(updatedUser);
   } catch (err) {
     return handleUnexpectedError(err, response);
@@ -47,33 +48,67 @@ export const updateUserController = async (request: UserUpdateRequest, response:
 
 export const getCurrentUserController = async (request: Request, response: UserGetCurrentResponse) => {
   try {
-    const { session, user } = await sessionModel.getSessionUser(request);
-    response.setHeader("Set-Cookie", sessionModel.createCookieSession(session.token));
+    const body = await sessionModel.getCurrentUser(request, response);
     response.setHeader("Cache-Control", "no-cache, no-store, max-age=0, must-revalidate");
-    return response.status(200).json({
-      session: {
-        updated_at: session.updated_at.toISOString(),
-        expires_at: session.expires_at.toISOString(),
-      },
-      user: {
-        username: user.username,
-        email: user.email,
-        permission: user.permission,
-        updated_at: user.updated_at.toISOString(),
-      },
-    });
+    return response.status(200).json(body);
   } catch (err) {
     return handleUnexpectedError(err, response);
   }
 };
 
+const activationNotFound = (cause: unknown) =>
+  new NotFoundError(cause, "Activation token not found or expired", "Please request a new activation token.");
+
+const isRejectedActivation = (err: unknown) => {
+  if (err instanceof BaseError) {
+    return err.status_code < 500;
+  }
+  if (typeof err === "object" && err && "status" in err) {
+    const status = Number((err as { status: unknown }).status);
+    if (Number.isFinite(status)) {
+      return status < 500;
+    }
+  }
+  return true;
+};
+
 export const activateUserController = async (request: Request, response: Response) => {
   try {
-    const { token } = request.query;
-    const activationToken = await activationManager.activateUserToken(token as string);
-    const user = await userModel.findOneById(activationToken.user_id);
-    await userModel.setUserPermissions(user.username, [PERMISSIONS.CREATE_OWN_SESSION]);
+    const token = request.query.token;
+    if (typeof token !== "string" || token.length === 0) {
+      throw activationNotFound(null);
+    }
+    const auth = await getAuth();
+    const headers = await toAuthHeaders(request.headers);
+    try {
+      await auth.api.verifyEmail({
+        query: { token },
+        headers,
+      });
+    } catch (err) {
+      if (isRejectedActivation(err)) {
+        throw activationNotFound(err);
+      }
+      throw err;
+    }
     return response.status(200).json({ message: "User activated successfully" });
+  } catch (err) {
+    return handleUnexpectedError(err, response);
+  }
+};
+
+export const resendActivationController = async (request: Request, response: Response) => {
+  try {
+    const auth = await getAuth();
+    const headers = await toAuthHeaders(request.headers);
+    const email = typeof request.body?.email === "string" ? request.body.email : "";
+    await auth.api.sendVerificationEmail({
+      body: { email },
+      headers,
+    });
+    return response.status(200).json({
+      message: "If an unactivated account exists for that email, a new link was sent.",
+    });
   } catch (err) {
     return handleUnexpectedError(err, response);
   }

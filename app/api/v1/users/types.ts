@@ -4,7 +4,6 @@ import { Permission } from "infra/auth/authorization";
 export interface User {
   id: string;
   username: string;
-  password: string;
   email: string;
   permission: Permission[];
   created_at: Date;
@@ -19,7 +18,6 @@ export type UserGetByUsernameRequest = Request<UserGetByUsernameQueryParam>;
 
 export interface UserGetByUsernameResponseBody {
   username: string;
-  password?: string; // Internal tooling only
   email: string;
   permission: Permission[];
   created_at: string;
