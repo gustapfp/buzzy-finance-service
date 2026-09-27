@@ -181,6 +181,17 @@ describe("Session API", () => {
       }
     });
 
+    it("login with an invalid email returns 401 without a cookie", async () => {
+      const response = await loginRequest(
+        { email: "not-an-email", password: TEST_USER.password },
+        { "User-Agent": "jest-test-agent" },
+      );
+
+      expect(response.status).toBe(401);
+      expect(await response.json()).toEqual(UNAUTHORIZED_BODY);
+      expect(response.headers.get("set-cookie")).toBeNull();
+    });
+
     it("C11 wrong password returns 401 without a cookie", async () => {
       const response = await loginRequest(
         { email: TEST_USER.email, password: "WrongPassword!999" },

@@ -110,6 +110,14 @@ export const toAuthHeaders = async (headers: IncomingHttpHeaders) => {
   return fromNodeHeaders(headers);
 };
 
+export const libraryStatusCode = (err: unknown): number | undefined => {
+  if (typeof err !== "object" || err === null || !("statusCode" in err)) {
+    return undefined;
+  }
+  const statusCode = (err as { statusCode: unknown }).statusCode;
+  return typeof statusCode === "number" && Number.isFinite(statusCode) ? statusCode : undefined;
+};
+
 export const copySetCookie = (from: globalThis.Response, to: Response) => {
   const cookies = from.headers.getSetCookie();
   if (cookies.length > 0) {

@@ -8,8 +8,10 @@ import {
   cleanDatabase,
   createUser,
   deleteAllEmails,
+  extractSessionCookie,
   getLastEmail,
   listEmails,
+  loginUser,
   resendActivation,
 } from "../utils";
 import { PERMISSIONS } from "infra/auth/authorization";
@@ -157,6 +159,24 @@ describe("User activation", () => {
       expect(await permissionFor(seedUser.username)).toEqual([PERMISSIONS.CREATE_OWN_SESSION]);
     });
 
+    it("C8 resend with another account session still sends for an unactivated email", async () => {
+      const other = { username: "user2", email: "user2@gmail.com", password: "user1234" };
+      await createUser(other);
+      const otherEmail = await getLastEmail();
+      await activateUser(activationTokenFromEmail(otherEmail.text));
+      const login = await loginUser({ email: other.email, password: other.password });
+      const cookie = extractSessionCookie(login);
+      await deleteAllEmails();
+      await createUser(seedUser);
+      await deleteAllEmails();
+      const response = await resendActivation(seedUser.email, cookie);
+      const body = await response.json();
+      expect(response.status).toBe(200);
+      expect(body).toEqual(RESEND_BODY);
+      expect(await listEmails()).toHaveLength(1);
+      expect(await permissionFor(seedUser.username)).toEqual([]);
+    });
+
     it("C9 resend for an unknown email sends nothing", async () => {
       await deleteAllEmails();
       const response = await resendActivation("missing@gmail.com");
@@ -173,6 +193,22 @@ describe("User activation", () => {
       const before = await permissionFor(seedUser.username);
       await deleteAllEmails();
       const response = await resendActivation(seedUser.email);
+      const body = await response.json();
+      expect(response.status).toBe(200);
+      expect(body).toEqual(RESEND_BODY);
+      expect(await listEmails()).toHaveLength(0);
+      expect(await permissionFor(seedUser.username)).toEqual(before);
+    });
+
+    it("C9 resend with a session cookie for an activated account sends nothing", async () => {
+      await createUser(seedUser);
+      const email = await getLastEmail();
+      await activateUser(activationTokenFromEmail(email.text));
+      const before = await permissionFor(seedUser.username);
+      const login = await loginUser({ email: seedUser.email, password: seedUser.password });
+      const cookie = extractSessionCookie(login);
+      await deleteAllEmails();
+      const response = await resendActivation(seedUser.email, cookie);
       const body = await response.json();
       expect(response.status).toBe(200);
       expect(body).toEqual(RESEND_BODY);

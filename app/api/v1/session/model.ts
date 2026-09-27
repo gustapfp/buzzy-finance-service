@@ -1,8 +1,9 @@
 import { Request, Response } from "express";
 import { UnauthorizedError } from "infra/errors/UnauthorizedError";
 import { NotFoundError } from "infra/errors/NotFoundError";
-import { copySetCookie, getAuth, toAuthHeaders } from "api/utils/auth";
+import { copySetCookie, getAuth, libraryStatusCode, toAuthHeaders } from "api/utils/auth";
 import { logger } from "api/utils/logger";
+import { InternalServerError } from "infra/errors/InternalServerError";
 import userModel from "../users/model";
 import { LoginRequestBody } from "./types";
 
@@ -19,15 +20,28 @@ const login = async (request: Request<Record<string, never>, unknown, LoginReque
       asResponse: true,
     });
     if (!webResponse.ok) {
-      throw new UnauthorizedError(null);
+      const statusCode = webResponse.status;
+      if (statusCode === 400 || statusCode === 401 || statusCode === 403) {
+        throw new UnauthorizedError(null);
+      }
+      const detail = await webResponse.text();
+      logger.error({ statusCode, detail }, "Error logging in");
+      throw new InternalServerError(null);
     }
     copySetCookie(webResponse, response);
   } catch (err) {
-    logger.error(err, "Error logging in");
+    if (err instanceof InternalServerError) {
+      throw err;
+    }
+    logger.error({ err, statusCode: libraryStatusCode(err) }, "Error logging in");
     if (err instanceof UnauthorizedError) {
       throw err;
     }
-    throw new UnauthorizedError(err);
+    const statusCode = libraryStatusCode(err);
+    if (statusCode === 400 || statusCode === 401 || statusCode === 403) {
+      throw new UnauthorizedError(err);
+    }
+    throw new InternalServerError(err);
   }
 };
 

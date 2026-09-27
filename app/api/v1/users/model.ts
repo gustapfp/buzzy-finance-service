@@ -1,7 +1,11 @@
 import { DB } from "infra/database/database";
-import { newUserIsValid, passwordLengthIsValid } from "./helpers";
+import { newUserIsValid, passwordLengthIsValid, takenFields } from "./helpers";
 import { logger } from "api/utils/logger";
+import { libraryStatusCode } from "api/utils/auth";
 import { NotFoundError } from "infra/errors/NotFoundError";
+import { ValidationError } from "infra/errors/ValidationError";
+import { InternalServerError } from "infra/errors/InternalServerError";
+import { BaseError } from "infra/errors/BaseError";
 import { User, UserCreateRequestBody, UserGetByUsernameResponseBody, UserUpdateRequestBody } from "./types";
 import { getAuth, toAuthHeaders } from "api/utils/auth";
 import type { Request } from "express";
@@ -24,7 +28,7 @@ const createUser = async (user: UserCreateRequestBody) => {
     passwordLengthIsValid(user.password);
     await newUserIsValid(user.email, user.username);
     const auth = await getAuth();
-    await auth.api.signUpEmail({
+    const created = await auth.api.signUpEmail({
       body: {
         name: user.username,
         email: user.email,
@@ -32,14 +36,27 @@ const createUser = async (user: UserCreateRequestBody) => {
       },
     });
     const stored = await findOneByEmail(user.email);
+    if (created.user.id !== stored.id) {
+      throw new ValidationError(null, ["email"]);
+    }
     return {
       username: stored.username,
       created_at: stored.created_at.toISOString(),
       updated_at: stored.updated_at.toISOString(),
     };
   } catch (err) {
-    logger.error(err, "Error creating user");
-    throw err;
+    logger.error({ err, statusCode: libraryStatusCode(err) }, "Error creating user");
+    if (err instanceof ValidationError || err instanceof NotFoundError) {
+      throw err;
+    }
+    const fields = await takenFields(user.email, user.username);
+    if (fields.length > 0) {
+      throw new ValidationError(err, fields);
+    }
+    if (err instanceof BaseError) {
+      throw err;
+    }
+    throw new InternalServerError(err);
   }
 };
 

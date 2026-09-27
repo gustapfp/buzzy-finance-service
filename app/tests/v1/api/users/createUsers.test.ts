@@ -246,6 +246,28 @@ describe("POST /v1/users", () => {
       expect(after.rows[0].count).toBe(before.rows[0].count);
       expect(await listEmails()).toHaveLength(0);
     });
+
+    it("C4 two signups for the same email return one 201 and one 422", async () => {
+      const [first, second] = await Promise.all([
+        createUser({ username: "racea", email: "race@gmail.com", password: "user1234" }),
+        createUser({ username: "raceb", email: "Race@gmail.com", password: "user1234" }),
+      ]);
+      const bodies = await Promise.all([first.json(), second.json()]);
+      const statuses = [first.status, second.status].sort((left, right) => left - right);
+      expect(statuses).toEqual([201, 422]);
+      const rejected = bodies[first.status === 422 ? 0 : 1];
+      expect(rejected).toEqual({
+        name: "validation_error",
+        message: "These fields are not valid: email",
+        action: "Fix the provided fields and try again.",
+        status_code: 422,
+      });
+      const count = await DB.query(`SELECT count(*)::int AS count FROM users`, []);
+      expect(count.rows[0].count).toBe(1);
+      const stored = await DB.query(`SELECT username FROM users`, []);
+      const created = bodies[first.status === 201 ? 0 : 1] as { username: string };
+      expect(created.username).toBe(stored.rows[0].username);
+    });
   });
   afterAll(async () => {
     await DB_POOL.end();

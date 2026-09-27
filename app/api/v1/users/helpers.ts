@@ -2,6 +2,7 @@ import { DB } from "infra/database/database";
 import { BaseError } from "infra/errors/BaseError";
 import { NotFoundError } from "infra/errors/NotFoundError";
 import { ValidationError } from "infra/errors/ValidationError";
+import { libraryStatusCode } from "api/utils/auth";
 
 const thisEmailAlreadyExits = async (email: string): Promise<boolean> => {
   const statement = `
@@ -31,16 +32,18 @@ const thisUsernameAlreadyExits = async (username: string) => {
   return false;
 };
 
-export const newUserIsValid = async (email?: string, username?: string) => {
+export const takenFields = async (email?: string, username?: string): Promise<string[]> => {
   const [emailExists, usernameExists] = await Promise.all([
     email ? thisEmailAlreadyExits(email) : Promise.resolve(false),
     username ? thisUsernameAlreadyExits(username) : Promise.resolve(false),
   ]);
-  if (emailExists || usernameExists) {
-    throw new ValidationError(
-      "Fields already exists in database.",
-      [emailExists ? "email" : "", usernameExists ? "username" : ""].filter((field) => field !== ""),
-    );
+  return [emailExists ? "email" : "", usernameExists ? "username" : ""].filter((field) => field !== "");
+};
+
+export const newUserIsValid = async (email?: string, username?: string) => {
+  const fields = await takenFields(email, username);
+  if (fields.length > 0) {
+    throw new ValidationError("Fields already exists in database.", fields);
   }
 
   return true;
@@ -59,11 +62,9 @@ export const isRejectedActivation = (err: unknown) => {
   if (err instanceof BaseError) {
     return err.status_code < 500;
   }
-  if (typeof err === "object" && err && "status" in err) {
-    const status = Number((err as { status: unknown }).status);
-    if (Number.isFinite(status)) {
-      return status < 500;
-    }
+  const statusCode = libraryStatusCode(err);
+  if (statusCode === undefined) {
+    return false;
   }
-  return true;
+  return statusCode < 500;
 };

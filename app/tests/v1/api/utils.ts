@@ -111,10 +111,13 @@ export const getCurrentUser = async (
   });
 };
 
-export const resendActivation = async (email: string) => {
+export const resendActivation = async (email: string, cookie?: string) => {
   return await fetch(`${USERS_ENDPOINT_URL}/activate`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(cookie ? { Cookie: cookie } : {}),
+    },
     body: JSON.stringify({ email }),
   });
 };

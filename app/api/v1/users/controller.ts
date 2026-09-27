@@ -11,7 +11,9 @@ import type {
 } from "./types";
 import type { Request, Response } from "express";
 import sessionModel from "../session/model";
-import { getAuth, toAuthHeaders } from "api/utils/auth";
+import { getAuth, libraryStatusCode, toAuthHeaders } from "api/utils/auth";
+import { logger } from "api/utils/logger";
+import { InternalServerError } from "infra/errors/InternalServerError";
 import { activationNotFound, isRejectedActivation } from "./helpers";
 
 export const getOneUserByUsernameController = async (
@@ -72,7 +74,8 @@ export const activateUserController = async (request: Request, response: Respons
       if (isRejectedActivation(err)) {
         throw activationNotFound(err);
       }
-      throw err;
+      logger.error({ err, statusCode: libraryStatusCode(err) }, "Error activating user");
+      throw new InternalServerError(err);
     }
     return response.status(200).json({ message: "User activated successfully" });
   } catch (err) {
@@ -84,6 +87,7 @@ export const resendActivationController = async (request: Request, response: Res
   try {
     const auth = await getAuth();
     const headers = await toAuthHeaders(request.headers);
+    headers.delete("cookie");
     const email = typeof request.body?.email === "string" ? request.body.email : "";
     await auth.api.sendVerificationEmail({
       body: { email },
